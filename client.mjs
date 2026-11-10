@@ -168,6 +168,7 @@ function currentView() {
     direction: localGame.direction,
     drawCount: localGame.drawPile.length,
     drawnCardId: localGame.drawnCardId,
+    stackAmount: localGame.stackAmount ?? 0,
     missedUno: localGame.missedUno?.playerId ?? null,
     winnerId: localGame.winner,
     winReason: localGame.winReason,
@@ -287,7 +288,7 @@ function canChooseCard(card, own, view) {
   if (view.currentPlayerId !== own.id || view.status !== "playing" || own.eliminated) return false;
   if (view.drawnCardId && view.drawnCardId !== card.id) return false;
   const rulesPlayer = { ...own, hand: own.hand };
-  return canPlayCard(card, { activeColor: view.activeColor, discardPile: [view.topCard] }, rulesPlayer);
+  return canPlayCard(card, { activeColor: view.activeColor, discardPile: [view.topCard], stackAmount: view.stackAmount ?? 0 }, rulesPlayer);
 }
 
 function renderGame(view) {
@@ -308,17 +309,25 @@ function renderGame(view) {
   const prevOwn = lastView?.players?.find?.((entry) => entry.id === viewerId) ?? null;
   const prevOwnIds = new Set(prevOwn?.hand?.map((entry) => entry.id) ?? []);
   const justDrawnIds = cards.filter((card) => !prevOwnIds.has(card.id)).map((card) => card.id);
-  const drawButton = view.drawnCardId
-    ? `<button class="button button-quiet button-small" data-action="pass" ${!yourTurn ? "disabled" : ""}>Pass turn</button>`
-    : `<button class="button button-secondary button-small" data-action="draw" ${!yourTurn ? "disabled" : ""}>Draw a card</button>`;
+  const stackPending = (view.stackAmount ?? 0) > 0;
+  const stackButton = stackPending && yourTurn
+    ? `<button class="button button-danger button-small" data-action="pay-stack">Take stack (+${view.stackAmount})</button>`
+    : "";
+  const drawButton = stackPending
+    ? ""
+    : view.drawnCardId
+      ? `<button class="button button-quiet button-small" data-action="pass" ${!yourTurn ? "disabled" : ""}>Pass turn</button>`
+      : `<button class="button button-secondary button-small" data-action="draw" ${!yourTurn ? "disabled" : ""}>Draw a card</button>`;
   const timeLeft = view.timeLeftMs == null ? "" : `<span class="time-chip${view.timeLeftMs < 60_000 ? " low" : ""}">${ICONS.clock} ${clockFor(view.timeLeftMs)}</span>`;
   const turnMessage = winner
     ? "The table has a winner."
     : own.eliminated
       ? "You busted out at 40+ cards — watching the rest play out."
       : yourTurn
-        ? (view.drawnCardId ? "Play the card you drew, or pass." : "Your turn · play a matching card or draw.")
-        : `Waiting for ${escapeHtml(view.players.find((player) => player.id === view.currentPlayerId)?.name ?? "a player")}`;
+        ? (stackPending
+          ? `A +${view.stackAmount} stack is open — stack an equal-or-bigger +card or take the pile.`
+          : view.drawnCardId ? "Play the card you drew, or pass." : "Your turn · play a matching card or draw.")
+        : `Waiting for ${escapeHtml(view.players.find((player) => player.id === view.currentPlayerId)?.name ?? "a player")}${stackPending ? ` to answer the +${view.stackAmount} stack` : ""}`;
   const handCards = cards.length
     ? cards.map((card) => {
       const playable = canChooseCard(card, own, view) && (own.cardCount !== 1 || called);
@@ -343,12 +352,12 @@ function renderGame(view) {
       <div class="opponents">${opponents.map((player) => renderOpponent(player, view, viewerId)).join("")}</div>
       <section class="arena" aria-label="Game table">
         <div class="table-center">
-          <div class="pile-wrap"><button class="draw-pile" data-action="draw" aria-label="Draw a card" ${!yourTurn || view.drawnCardId ? "disabled" : ""}><span class="back-card"></span></button><span class="pile-caption">Draw · ${view.drawCount}</span></div>
-          <div class="pile-wrap"><div class="discard-slot${discardClass}"><span class="color-ring" data-color="${activeColorClass}" aria-hidden="true"></span>${view.topCard ? cardMarkup(view.topCard) : ""}</div><span class="pile-caption">Played card</span></div>
+          <div class="pile-wrap"><button class="draw-pile" data-action="draw" aria-label="Draw a card" ${!yourTurn || view.drawnCardId || stackPending ? "disabled" : ""}><span class="back-card"></span></button><span class="pile-caption">Draw · ${view.drawCount}</span></div>
+          <div class="pile-wrap"><div class="discard-slot${discardClass}"><span class="color-ring" data-color="${activeColorClass}" aria-hidden="true"></span>${view.topCard ? cardMarkup(view.topCard) : ""}</div><span class="pile-caption${stackPending ? " stack-live" : ""}">${stackPending ? `Stack +${view.stackAmount}` : "Played card"}</span></div>
         </div>
       </section>
       <div class="turn-callout"><i class="turn-indicator"></i><span>${turnMessage}</span><span class="active-color"><i class="active-swatch ${activeColorClass}"></i>${activeColorClass} · ${view.direction === 1 ? "clockwise" : "counterclockwise"}</span></div>
-      <div class="control-row">${drawButton}${canCall ? `<button class="button button-primary button-small" data-action="call-uno">Say UNO</button>` : ""}${canCatch ? `<button class="button button-danger button-small" data-action="catch-uno">Call out missed UNO</button>` : ""}${view.status === "finished" ? `<button class="button button-primary button-small" data-action="exit">Play again</button>` : ""}</div>
+      <div class="control-row">${stackButton}${drawButton}${canCall ? `<button class="button button-primary button-small" data-action="call-uno">Say UNO</button>` : ""}${canCatch ? `<button class="button button-danger button-small" data-action="catch-uno">Call out missed UNO</button>` : ""}${view.status === "finished" ? `<button class="button button-primary button-small" data-action="exit">Play again</button>` : ""}</div>
       <section class="hand-area" aria-label="Your hand">
         <div class="hand-heading"><div><strong>YOUR HAND</strong><span>${own.cardCount} ${own.cardCount === 1 ? "card" : "cards"}${own.cardCount >= 35 && !own.eliminated ? " · bust at 41!" : ""}</span></div>${own.cardCount === 1 ? `<span>${called ? "UNO called" : "Call UNO before your last card"}</span>` : ""}</div>
         <div class="hand-cards">${handCards}</div>
@@ -590,6 +599,7 @@ document.addEventListener("click", async (event) => {
       notice = "Invite link copied.";
       return render();
     }
+    if (action === "pay-stack") return await submitMove({ type: "payStack" });
     if (action === "draw" || action === "pass" || action === "call-uno" || action === "catch-uno") {
       const type = ({ draw: "draw", pass: "pass", "call-uno": "callUno", "catch-uno": "catchUno" })[action];
       await submitMove({ type });

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { applyMove, canPlayCard, createDeck, createGame, ELIMINATION_LIMIT, finishByTimeout, playAiTurn } from "./game.mjs";
+import { applyMove, botStep, canPlayCard, createDeck, createGame, ELIMINATION_LIMIT, finishByTimeout, playAiTurn } from "./game.mjs";
 
 function fixture(hand, options = {}) {
   const players = [
@@ -17,6 +17,7 @@ function fixture(hand, options = {}) {
     direction: 1,
     activeColor: options.activeColor ?? "red",
     drawnCardId: null,
+    stackAmount: options.stackAmount ?? 0,
     missedUno: null,
     unoCalled: Object.fromEntries(players.map(({ id }) => [id, false])),
     winner: null,
@@ -70,31 +71,54 @@ test("matches by color or symbol and rejects an illegal Wild Draw Four", () => {
   assert.equal(game.currentIndex, 0);
 });
 
-test("Draw Two draws two cards and skips the next player", () => {
+test("Draw Two opens a pending stack; another +2 escalates and the next player pays it all", () => {
   const game = fixture([{ id: "plus-two", color: "red", type: "draw2" }, { id: "spare", color: "blue", type: "number", value: 7 }], {
     drawPile: [
       { id: "draw-a", color: "green", type: "number", value: 5 },
       { id: "draw-b", color: "yellow", type: "number", value: 6 },
+      { id: "draw-c", color: "green", type: "number", value: 7 },
+      { id: "draw-d", color: "yellow", type: "number", value: 8 },
     ],
   });
   applyMove(game, "a", { type: "play", cardId: "plus-two" });
-  assert.equal(game.players[1].hand.length, 3);
+  assert.equal(game.stackAmount, 2);
+  assert.equal(game.players[1].hand.length, 1);
+  assert.equal(game.currentIndex, 1);
+
+  game.players[1].hand = [
+    { id: "plus-two-b", color: "blue", type: "draw2" },
+    { id: "b-spare", color: "green", type: "number", value: 1 },
+  ];
+  applyMove(game, "b", { type: "play", cardId: "plus-two-b" });
+  assert.equal(game.stackAmount, 4);
   assert.equal(game.currentIndex, 2);
+
+  applyMove(game, "c", { type: "payStack" });
+  assert.equal(game.players[2].hand.length, 5);
+  assert.equal(game.stackAmount, 0);
+  assert.equal(game.currentIndex, 0);
+  assert.throws(() => applyMove(game, "a", { type: "payStack" }), /no card stack/);
 });
 
-test("+10, +15, and +20 bombs draw their full weight and skip the victim", () => {
+test("+10/+15/+20 bombs defer their full weight until the stack is paid", () => {
   for (const [type, weight] of [["draw10", 10], ["draw15", 15], ["draw20", 20]]) {
     const game = fixture([{ id: "bomb", color: "red", type }, { id: "spare", color: "blue", type: "number", value: 7 }], {
       playerCount: 3,
       drawPile: Array.from({ length: weight }, (_, i) => ({ id: `hit-${i}`, color: "green", type: "number", value: i })),
     });
     applyMove(game, "a", { type: "play", cardId: "bomb" });
+    assert.equal(game.stackAmount, weight);
+    assert.equal(game.players[1].hand.length, 1);
+    assert.equal(game.currentIndex, 1);
+
+    applyMove(game, "b", { type: "payStack" });
     assert.equal(game.players[1].hand.length, 1 + weight);
+    assert.equal(game.stackAmount, 0);
     assert.equal(game.currentIndex, 2);
   }
 });
 
-test("wild +10/+15/+20 can be played anytime and pick the next color", () => {
+test("wild +10/+15/+20 can be played anytime, pick the next color, and answer stacks by value", () => {
   const game = fixture([
     { id: "wild-bomb", color: null, type: "wild20" },
     { id: "spare", color: "blue", type: "number", value: 7 },
@@ -106,11 +130,23 @@ test("wild +10/+15/+20 can be played anytime and pick the next color", () => {
   assert.equal(canPlayCard(player.hand[0], game, player), true);
   applyMove(game, "a", { type: "play", cardId: "wild-bomb", color: "yellow" });
   assert.equal(game.activeColor, "yellow");
-  assert.equal(game.players[1].hand.length, 21);
+  assert.equal(game.stackAmount, 20);
+  assert.equal(game.players[1].hand.length, 1);
+  assert.equal(game.currentIndex, 1);
+
+  // A colored +20 answers the wild +20 across colors; a plain wild cannot.
+  game.players[1].hand = [
+    { id: "answer", color: "blue", type: "draw20" },
+    { id: "plain", color: null, type: "wild" },
+  ];
+  assert.equal(canPlayCard(game.players[1].hand[0], game, game.players[1]), true);
+  assert.equal(canPlayCard(game.players[1].hand[1], game, game.players[1]), false);
+  applyMove(game, "b", { type: "payStack" });
+  assert.equal(game.players[1].hand.length, 22);
   assert.equal(game.currentIndex, 2);
 });
 
-test("a player busts at 41 cards and the last player standing wins", () => {
+test("a player busts at 41 cards when they pay a stack, and the last player standing wins", () => {
   const victim = Array.from({ length: 39 }, (_, i) => ({ id: `bust-${i}`, color: "green", type: "number", value: i % 10 }));
   const game = fixture([
     { id: "hammer", color: "red", type: "draw10" },
@@ -121,11 +157,16 @@ test("a player busts at 41 cards and the last player standing wins", () => {
     drawPile: Array.from({ length: 10 }, (_, i) => ({ id: `hit-${i}`, color: "green", type: "number", value: i })),
   });
   applyMove(game, "a", { type: "play", cardId: "hammer" });
-  assert.equal(game.players[1].hand.length, 39 + 10);
-  assert.ok(game.players[1].hand.length > ELIMINATION_LIMIT);
+  assert.equal(game.stackAmount, 10);
+  assert.notEqual(game.players[1].eliminated, true);
+
+  applyMove(game, "b", { type: "payStack" });
   assert.equal(game.players[1].eliminated, true);
+  assert.equal(game.players[1].hand.length, 0);
+  assert.ok(game.discardPile.length >= 1 + 39 + 10);
   assert.equal(game.winner, null);
   assert.equal(game.currentIndex, 2);
+  assert.equal(game.stackAmount, 0);
 
   // Simulate C dropping out afterwards: only A remains, so A's next turn settles it.
   game.players[2].eliminated = true;
@@ -134,6 +175,64 @@ test("a player busts at 41 cards and the last player standing wins", () => {
   applyMove(game, "a", { type: "draw" });
   assert.equal(game.winner, "a");
   assert.equal(game.winReason, "last-standing");
+});
+
+test("an open stack locks out normal cards and only accepts legal escalations", () => {
+  // A +2 chain only takes another +2; everything else is locked out.
+  const plus2 = fixture([
+    { id: "open-two", color: "red", type: "draw2" },
+    { id: "a-spare", color: "blue", type: "number", value: 3 },
+  ], { playerCount: 3 });
+  applyMove(plus2, "a", { type: "play", cardId: "open-two" });
+  const b = plus2.players[1];
+  b.hand = [
+    { id: "b-draw2", color: "blue", type: "draw2" },
+    { id: "b-draw5", color: "blue", type: "draw5" },
+    { id: "b-wild4", color: null, type: "wild4" },
+    { id: "b-two", color: "red", type: "number", value: 2 },
+  ];
+  assert.equal(canPlayCard(b.hand[0], plus2, b), true);
+  assert.equal(canPlayCard(b.hand[1], plus2, b), false);
+  assert.equal(canPlayCard(b.hand[2], plus2, b), false);
+  assert.equal(canPlayCard(b.hand[3], plus2, b), false);
+  assert.throws(() => applyMove(plus2, "b", { type: "draw" }), /Take the card stack/);
+  assert.throws(() => applyMove(plus2, "b", { type: "play", cardId: "b-two" }), /does not match/);
+
+  // Bigger stacks accept equal-or-higher strikes by value, in any color.
+  const plus5 = fixture([
+    { id: "open-five", color: "red", type: "draw5" },
+    { id: "a-spare", color: "blue", type: "number", value: 3 },
+  ], { playerCount: 3 });
+  applyMove(plus5, "a", { type: "play", cardId: "open-five" });
+  const c = plus5.players[1];
+  c.hand = [
+    { id: "c-draw5", color: "blue", type: "draw5" },
+    { id: "c-draw10", color: "green", type: "draw10" },
+    { id: "c-draw2", color: "red", type: "draw2" },
+    { id: "c-wild", color: null, type: "wild" },
+  ];
+  assert.equal(canPlayCard(c.hand[0], plus5, c), true);
+  assert.equal(canPlayCard(c.hand[1], plus5, c), true);
+  assert.equal(canPlayCard(c.hand[2], plus5, c), false);
+  assert.equal(canPlayCard(c.hand[3], plus5, c), false);
+  assert.throws(() => applyMove(plus5, "b", { type: "play", cardId: "c-draw2" }), /does not match/);
+});
+
+test("bots pay the stack when they hold no escalation", () => {
+  const game = fixture([
+    { id: "strike", color: "red", type: "draw5" },
+    { id: "a-spare", color: "blue", type: "number", value: 3 },
+    { id: "a-spare-2", color: "green", type: "number", value: 4 },
+  ], {
+    playerCount: 2,
+    drawPile: Array.from({ length: 6 }, (_, i) => ({ id: `hit-${i}`, color: "yellow", type: "number", value: i })),
+  });
+  applyMove(game, "a", { type: "play", cardId: "strike" });
+  game.players[1].hand = [{ id: "stuck", color: "green", type: "number", value: 9 }];
+  botStep(game);
+  assert.equal(game.players[1].hand.length, 6);
+  assert.equal(game.stackAmount, 0);
+  assert.equal(game.currentIndex, 0);
 });
 
 test("turn order skips eliminated players", () => {

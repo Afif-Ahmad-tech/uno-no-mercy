@@ -64,6 +64,7 @@ export function createGame(players, random = Math.random) {
     direction: 1,
     activeColor: firstCard.color,
     drawnCardId: null,
+    stackAmount: 0,
     missedUno: null,
     unoCalled: Object.fromEntries(ids.map((id) => [id, false])),
     winner: null,
@@ -84,6 +85,15 @@ export function isDrawCard(card) {
 }
 
 export function canPlayCard(card, state, player) {
+  if (state.stackAmount > 0) {
+    // An open strike stack: matching is by value only, color is ignored.
+    // A +2 chain refuses everything except another +2; +4 and up take
+    // equal-or-higher strikes.
+    if (!isDrawCard(card)) return false;
+    const topValue = DRAW_COUNT[state.discardPile.at(-1)?.type] ?? 0;
+    if (topValue === 2) return card.type === "draw2";
+    return DRAW_COUNT[card.type] >= topValue;
+  }
   if (card.type === "wild" || card.type === "wild10" || card.type === "wild15" || card.type === "wild20") return true;
   if (card.type === "wild4") return !player.hand.some((held) => held.id !== card.id && held.color === state.activeColor);
   const top = state.discardPile.at(-1);
@@ -145,7 +155,13 @@ function drawMany(state, player, count) {
 
 function checkEliminations(state) {
   for (const player of state.players) {
-    if (player.eliminated !== true && player.hand.length > ELIMINATION_LIMIT) player.eliminated = true;
+    if (player.eliminated !== true && player.hand.length > ELIMINATION_LIMIT) {
+      player.eliminated = true;
+      // A busted hand returns to the bottom of the discard pile so the
+      // deck keeps circulating; the retained top card stays on top.
+      state.discardPile.unshift(...player.hand);
+      player.hand = [];
+    }
   }
   const alive = activePlayers(state);
   if (!state.winner && alive.length === 1) {
@@ -231,16 +247,16 @@ export function applyMove(state, playerId, move) {
     }
 
     if (isDrawCard(card)) {
-      const target = state.players[nextActiveIndex(state, state.currentIndex)];
-      drawMany(state, target, DRAW_COUNT[card.type]);
-      if (card.type === "reverse") state.direction *= -1;
-      checkEliminations(state);
-      if (state.winner) return state;
-      advance(state, target.eliminated === true ? 1 : 2);
+      // No-mercy stacking: the strike is deferred, not dealt. The next
+      // player must escalate with an equal-or-bigger draw card or pay
+      // the accumulated pile with payStack.
+      state.stackAmount = (state.stackAmount ?? 0) + DRAW_COUNT[card.type];
+      advance(state, 1);
       if (state.missedUno) state.missedUno.expiresOn = currentPlayer(state).id;
       return state;
     }
 
+    state.stackAmount = 0;
     if (card.type === "reverse") state.direction *= -1;
     const spaces = 1 + Number(card.type === "skip") + (card.type === "reverse" && state.players.length === 2 ? 1 : 0);
     advance(state, spaces);
@@ -249,9 +265,15 @@ export function applyMove(state, playerId, move) {
   }
 
   if (move.type === "draw") {
+    if (state.stackAmount > 0) throw new Error("Take the card stack instead.");
     closeMissedUnoWindow(state, playerId);
     const card = drawOne(state);
     if (card) player.hand.push(card);
+    else if (activePlayers(state).every((seat) => !playableCards(state, seat).length)) {
+      // The deck is dead and nobody can play a card: the clock settles it.
+      finishByTimeout(state);
+      return state;
+    }
     checkEliminations(state);
     if (state.winner) return state;
     if (player.eliminated === true) {
@@ -260,6 +282,18 @@ export function applyMove(state, playerId, move) {
     }
     if (card && canPlayCard(card, state, player)) state.drawnCardId = card.id;
     else advance(state);
+    return state;
+  }
+
+  if (move.type === "payStack") {
+    if (state.stackAmount === 0) throw new Error("There is no card stack to take.");
+    closeMissedUnoWindow(state, playerId);
+    drawMany(state, player, state.stackAmount);
+    state.stackAmount = 0;
+    checkEliminations(state);
+    if (state.winner) return state;
+    advance(state, 1);
+    if (state.missedUno) state.missedUno.expiresOn = currentPlayer(state).id;
     return state;
   }
 
@@ -278,13 +312,15 @@ function playHand(state, player) {
   if (!cards.length) return false;
   // Cards that can actually pay their strike: the reshuffle can only free
   // discardPile minus the retained top card, so bound the deliverable amount.
+  // With stacking, an escalation must leave the NEXT player a cumulative
+  // debt the pool can cover — otherwise the bot pays the stack instead.
   const available = state.drawPile.length + Math.max(state.discardPile.length - 1, 0);
-  const delivers = (card) => !isDrawCard(card) || DRAW_COUNT[card.type] <= available;
+  const delivers = (card) => !isDrawCard(card) || (state.stackAmount ?? 0) + DRAW_COUNT[card.type] <= available;
+  const payable = cards.filter(delivers);
+  if (state.stackAmount > 0 && !payable.length) return false;
+  const options = payable.length ? payable : cards;
   const severity = (card) => (DRAW_COUNT[card.type] ?? 0) * 2 + (card.type === "skip" ? 6 : 0) + (card.type === "reverse" ? 4 : 0) + Number(card.type !== "number");
-  const card = [...cards].sort((a, b) => {
-    if (delivers(a) !== delivers(b)) return delivers(a) ? -1 : 1;
-    return severity(b) - severity(a);
-  })[0];
+  const card = [...options].sort((a, b) => severity(b) - severity(a))[0];
   const remaining = player.hand.filter((held) => held.id !== card.id);
   const colorCounts = COLORS.map((color) => ({ color, count: remaining.filter((held) => held.color === color).length }));
   colorCounts.sort((a, b) => b.count - a.count);
@@ -302,6 +338,10 @@ export function botStep(state) {
   const seatId = player.id;
   if (state.missedUno && state.missedUno.playerId !== seatId) {
     applyMove(state, seatId, { type: "catchUno" });
+    return state;
+  }
+  if (state.stackAmount > 0) {
+    if (!playHand(state, player)) applyMove(state, seatId, { type: "payStack" });
     return state;
   }
   if (state.drawnCardId) {
@@ -336,6 +376,7 @@ export function publicState(state, viewerId) {
     topCard: state.discardPile.at(-1),
     drawCount: state.drawPile.length,
     drawnCardId: state.drawnCardId,
+    stackAmount: state.stackAmount ?? 0,
     missedUno: state.missedUno?.playerId ?? null,
     winnerId: state.winner,
     winReason: state.winReason,

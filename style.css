@@ -299,6 +299,7 @@ footer span { color: var(--gold); }
 .table-center { position: relative; z-index: 1; display: flex; align-items: center; gap: clamp(28px, 7vw, 92px); }
 .pile-wrap { display: grid; justify-items: center; gap: 11px; }
 .pile-caption { color: rgba(255, 255, 255, .52); font-size: 9px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+.pile-caption.stack-live { color: var(--gold); text-shadow: 0 0 12px rgba(245, 196, 84, .45); }
 
 .draw-pile { width: 82px; height: 120px; padding: 0; border: 0; background: transparent; cursor: pointer; transform: rotate(-7deg); transition: transform var(--t-fast) var(--ease-spring); }
 .draw-pile:hover:not(:disabled) { transform: rotate(-7deg) translateY(-5px); }
