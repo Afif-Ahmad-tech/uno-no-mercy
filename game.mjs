@@ -273,33 +273,42 @@ export function applyMove(state, playerId, move) {
   throw new Error("Unknown move.");
 }
 
-export function playAiTurn(state) {
+function playHand(state, player) {
+  const cards = playableCards(state, player);
+  if (!cards.length) return false;
+  const severity = (card) => (DRAW_COUNT[card.type] ?? 0) * 2 + (card.type === "skip" ? 6 : 0) + (card.type === "reverse" ? 4 : 0) + Number(card.type !== "number");
+  const card = [...cards].sort((a, b) => severity(b) - severity(a))[0];
+  const remaining = player.hand.filter((held) => held.id !== card.id);
+  const colorCounts = COLORS.map((color) => ({ color, count: remaining.filter((held) => held.color === color).length }));
+  colorCounts.sort((a, b) => b.count - a.count);
+  applyMove(state, player.id, {
+    type: "play",
+    cardId: card.id,
+    ...(isWildCard(card) ? { color: colorCounts[0].color } : {}),
+    ...(player.hand.length === 2 ? { declareUno: true } : {}),
+  });
+  return true;
+}
+
+export function botStep(state) {
   const player = currentPlayer(state);
-  if (state.missedUno && state.missedUno.playerId !== player.id) {
-    applyMove(state, player.id, { type: "catchUno" });
+  const seatId = player.id;
+  if (state.missedUno && state.missedUno.playerId !== seatId) {
+    applyMove(state, seatId, { type: "catchUno" });
     return state;
   }
-  const play = () => {
-    const cards = playableCards(state, player);
-    if (!cards.length) return false;
-    const severity = (card) => (DRAW_COUNT[card.type] ?? 0) * 2 + (card.type === "skip" ? 6 : 0) + (card.type === "reverse" ? 4 : 0) + Number(card.type !== "number");
-    const card = [...cards].sort((a, b) => severity(b) - severity(a))[0];
-    const remaining = player.hand.filter((held) => held.id !== card.id);
-    const colorCounts = COLORS.map((color) => ({ color, count: remaining.filter((held) => held.color === color).length }));
-    colorCounts.sort((a, b) => b.count - a.count);
-    applyMove(state, player.id, {
-      type: "play",
-      cardId: card.id,
-      ...(isWildCard(card) ? { color: colorCounts[0].color } : {}),
-      ...(player.hand.length === 2 ? { declareUno: true } : {}),
-    });
-    return true;
-  };
-  if (play()) return state;
-  applyMove(state, player.id, { type: "draw" });
-  if (state.drawnCardId && currentPlayer(state).id === player.id) {
-    if (!play()) applyMove(state, player.id, { type: "pass" });
+  if (state.drawnCardId) {
+    if (!playHand(state, player)) applyMove(state, seatId, { type: "pass" });
+    return state;
   }
+  if (playHand(state, player)) return state;
+  applyMove(state, seatId, { type: "draw" });
+  return state;
+}
+
+export function playAiTurn(state) {
+  const seat = currentPlayer(state).id;
+  for (let steps = 0; steps < 4 && !state.winner && currentPlayer(state).id === seat; steps++) botStep(state);
   return state;
 }
 

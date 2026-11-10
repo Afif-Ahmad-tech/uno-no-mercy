@@ -1,4 +1,4 @@
-import { COLORS, applyMove, canPlayCard, createGame, currentPlayer, playAiTurn } from "./game.mjs";
+import { COLORS, applyMove, botStep, canPlayCard, createGame, currentPlayer } from "./game.mjs";
 
 const app = document.querySelector("#app");
 const modalRoot = document.querySelector("#modal-root");
@@ -12,6 +12,105 @@ let botTimer = null;
 let inviteCode = "";
 let pendingCard = null;
 let selectedColor = null;
+let lastView = null;
+let lastBotId = null;
+let suppressOwnThrow = false;
+
+const BOT_FIRST_GAP = 1700;
+const BOT_STEP_GAP = 800;
+const prefersReducedMotion = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function ensureFxLayer() {
+  let layer = document.getElementById("fx-layer");
+  if (!layer) {
+    layer = document.createElement("div");
+    layer.id = "fx-layer";
+    document.body.appendChild(layer);
+  }
+  return layer;
+}
+
+function rectOf(selector) {
+  const element = document.querySelector(selector);
+  return element ? element.getBoundingClientRect() : null;
+}
+
+function flyCard({ html, from, to, duration = 620, endRotate = 0, width = 72 }) {
+  if (!from || !to || prefersReducedMotion()) return Promise.resolve();
+  const layer = ensureFxLayer();
+  const el = document.createElement("span");
+  el.className = "fx-card";
+  el.innerHTML = html;
+  el.style.left = `${Math.round(from.left + from.width / 2 - width / 2)}px`;
+  el.style.top = `${Math.round(from.top + from.height / 2 - width * 0.72)}px`;
+  el.style.width = `${width}px`;
+  el.style.height = `${Math.round(width * 1.44)}px`;
+  el.style.setProperty("--fx-d", `${duration}ms`);
+  el.style.transform = "rotate(0deg)";
+  layer.appendChild(el);
+  const dx = Math.round(to.left + to.width / 2 - (from.left + from.width / 2));
+  const dy = Math.round(to.top + to.height / 2 - (from.top + from.height / 2));
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      el.style.transform = `translate(${dx}px, ${dy}px) rotate(${endRotate}deg)`;
+    });
+    setTimeout(() => {
+      el.style.opacity = "0";
+      setTimeout(() => el.remove(), 220);
+      resolve();
+    }, duration);
+    setTimeout(() => el.remove(), duration + 260);
+  });
+}
+
+function animatePickups(view, viewerId) {
+  const prev = lastView;
+  if (!prev || prev.status !== "playing" || prefersReducedMotion()) return;
+  const deck = rectOf(".draw-pile");
+  if (!deck) return;
+  for (const player of view.players) {
+    const prevPlayer = prev.players.find((entry) => entry.id === player.id);
+    if (!prevPlayer || !prevPlayer.cardCount || player.cardCount <= prevPlayer.cardCount) continue;
+    const gained = Math.min(player.cardCount - prevPlayer.cardCount, 4);
+    const to = player.id === viewerId
+      ? rectOf(".hand-cards")
+      : rectOf(`.opponent[data-player-id="${player.id}"]`);
+    if (!to) continue;
+    for (let index = 0; index < gained; index++) {
+      setTimeout(() => {
+        void flyCard({
+          html: `<span class="back-card"></span>`,
+          from: deck,
+          to,
+          duration: 700,
+          width: 46,
+        });
+      }, index * 150);
+    }
+  }
+}
+
+function animateThrowFromDiff(view, viewerId) {
+  const prev = lastView;
+  if (!prev || prev.status !== "playing" || !prev.topCard || !view.topCard) return false;
+  if (prev.topCard.id === view.topCard.id) return false;
+  if (suppressOwnThrow) return true;
+  const actorId = prev.currentPlayerId;
+  const from = actorId === viewerId
+    ? rectOf(".hand-cards")
+    : rectOf(`.opponent[data-player-id="${actorId}"]`);
+  const to = rectOf(".discard-slot");
+  if (from && to) {
+    void flyCard({
+      html: cardMarkup(view.topCard),
+      from,
+      to,
+      duration: 620,
+      endRotate: 6,
+    });
+  }
+  return true;
+}
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 const cardLabels = { skip: "SKIP", reverse: "↶", draw2: "+2", draw5: "+5", draw10: "+10", draw15: "+15", draw20: "+20", wild: "WILD", wild4: "+4", wild10: "+10", wild15: "+15", wild20: "+20" };
@@ -143,7 +242,8 @@ function renderOpponent(player, view, viewerId) {
   const initial = [...player.name][0]?.toUpperCase() ?? "?";
   const backs = player.eliminated ? "" : Array.from({ length: Math.min(player.cardCount, 6) }, () => `<i class="mini-back"></i>`).join("");
   const badge = player.eliminated ? `<span class="out-badge">BUST</span>` : player.unoCalled ? `<span class="uno-badge">UNO</span>` : "";
-  return `<div class="opponent${player.id === view.currentPlayerId ? " is-turn" : ""}${player.eliminated ? " is-out" : ""}">
+  const isTurn = player.id === view.currentPlayerId && view.status === "playing" && !player.eliminated;
+  return `<div class="opponent${isTurn ? " is-turn" : ""}${player.eliminated ? " is-out" : ""}" data-player-id="${escapeHtml(player.id)}">
     <span class="avatar ${bot ? "bot" : "friend"}" aria-hidden="true">${escapeHtml(initial)}</span>
     <span><span class="player-name">${escapeHtml(player.name)}${player.id === viewerId ? " (you)" : ""}</span><span class="player-count">${player.eliminated ? "out at 40+ cards" : `${player.cardCount} cards`}</span></span>
     <span class="mini-hand" aria-hidden="true">${badge}${backs}</span>
@@ -172,6 +272,9 @@ function renderGame(view) {
   const canCall = own.cardCount === 1 && !called && !own.eliminated && (yourTurn || view.missedUno === viewerId);
   const canCatch = view.missedUno && view.missedUno !== viewerId && view.status === "playing";
   const cards = own.hand ?? [];
+  const prevOwn = lastView?.players?.find?.((entry) => entry.id === viewerId) ?? null;
+  const prevOwnIds = new Set(prevOwn?.hand?.map((entry) => entry.id) ?? []);
+  const justDrawnIds = cards.filter((card) => !prevOwnIds.has(card.id)).map((card) => card.id);
   const drawButton = view.drawnCardId
     ? `<button class="button button-quiet button-small" data-action="pass" ${!yourTurn ? "disabled" : ""}>Pass turn</button>`
     : `<button class="button button-secondary button-small" data-action="draw" ${!yourTurn ? "disabled" : ""}>Draw a card</button>`;
@@ -186,11 +289,17 @@ function renderGame(view) {
   const handCards = cards.length
     ? cards.map((card) => {
       const playable = canChooseCard(card, own, view) && (own.cardCount !== 1 || called);
-      return `<button class="hand-card${playable ? " is-playable" : ""}" data-action="pick-card" data-card="${escapeHtml(card.id)}" aria-label="${escapeHtml(cardName(card))} ${escapeHtml(card.color ?? "wild")} card${playable ? ", playable" : ""}" ${playable ? "" : "disabled"}>${cardMarkup(card)}</button>`;
+      const freshlyTaken = justDrawnIds.includes(card.id);
+      return `<button class="hand-card${playable ? " is-playable" : ""}${freshlyTaken ? " just-drawn" : ""}" data-action="pick-card" data-card="${escapeHtml(card.id)}" aria-label="${escapeHtml(cardName(card))} ${escapeHtml(card.color ?? "wild")} card${playable ? ", playable" : ""}" ${playable ? "" : "disabled"}>${cardMarkup(card)}</button>`;
     }).join("")
     : `<span class="empty-hand">Your cards are private to you.</span>`;
   const activeColorClass = COLORS.includes(view.activeColor) ? view.activeColor : "red";
   const eliminatedCount = opponents.filter((player) => player.eliminated).length;
+
+  const topChanged = animateThrowFromDiff(view, viewerId);
+  animatePickups(view, viewerId);
+  suppressOwnThrow = false;
+  const discardClass = topChanged ? " landed" : "";
 
   app.innerHTML = `
     <section class="game-page">
@@ -202,7 +311,7 @@ function renderGame(view) {
       <section class="arena" aria-label="Game table">
         <div class="table-center">
           <div class="pile-wrap"><button class="draw-pile" data-action="draw" aria-label="Draw a card" ${!yourTurn || view.drawnCardId ? "disabled" : ""}><span class="back-card"></span></button><span class="pile-caption">Draw · ${view.drawCount}</span></div>
-          <div class="pile-wrap"><div class="discard-slot">${view.topCard ? cardMarkup(view.topCard) : ""}</div><span class="pile-caption">Played card</span></div>
+          <div class="pile-wrap"><div class="discard-slot${discardClass}">${view.topCard ? cardMarkup(view.topCard) : ""}</div><span class="pile-caption">Played card</span></div>
         </div>
       </section>
       <div class="turn-callout"><i class="turn-indicator"></i><span>${turnMessage}</span><span class="active-color"><i class="active-swatch ${activeColorClass}"></i>${activeColorClass} · ${view.direction === 1 ? "clockwise" : "counterclockwise"}</span></div>
@@ -240,15 +349,18 @@ function renderPlayModal() {
 
 function render() {
   if (mode === "online" && roomState?.status === "waiting") {
+    lastView = roomState;
     app.innerHTML = `<section class="game-page">${renderLobby(roomState)}</section>`;
   } else if ((mode === "online" && roomState) || (mode === "local" && localGame)) {
     const view = currentView();
     renderGame(view);
+    lastView = view;
     if (view.winnerId) {
       renderWinner(view);
       return;
     }
   } else {
+    lastView = null;
     renderMenu();
   }
   renderPlayModal();
@@ -317,20 +429,36 @@ function startSolo() {
   ]);
   mode = "local";
   notice = "";
+  lastBotId = null;
+  lastView = null;
   render();
   scheduleBot();
 }
 
 function scheduleBot() {
   clearTimeout(botTimer);
-  if (mode !== "local" || localGame.winner || currentPlayer(localGame).id === "you") return;
+  if (mode !== "local" || localGame.winner) return;
+  const current = currentPlayer(localGame);
+  if (current.id === "you") {
+    lastBotId = null;
+    return;
+  }
+  const gap = (lastBotId === current.id ? BOT_STEP_GAP : BOT_FIRST_GAP) + Math.floor(Math.random() * 500);
   botTimer = setTimeout(() => {
     if (mode !== "local" || localGame.winner) return;
-    playAiTurn(localGame);
+    const bot = currentPlayer(localGame);
+    if (!bot || bot.id === "you") {
+      lastBotId = null;
+      render();
+      scheduleBot();
+      return;
+    }
+    botStep(localGame);
     notice = "";
+    lastBotId = currentPlayer(localGame)?.id === bot.id ? bot.id : null;
     render();
     scheduleBot();
-  }, 900);
+  }, gap);
 }
 
 async function submitMove(move) {
@@ -357,6 +485,10 @@ function leaveTable() {
   session = null;
   mode = "menu";
   notice = "";
+  lastView = null;
+  lastBotId = null;
+  suppressOwnThrow = false;
+  ensureFxLayer().replaceChildren();
   render();
 }
 
@@ -377,10 +509,19 @@ function beginPlay(cardId) {
   else void confirmPlay(false);
 }
 
+function flyOwnPlay(card) {
+  const id = typeof CSS !== "undefined" && CSS.escape ? CSS.escape(card.id) : card.id;
+  const from = document.querySelector(`.hand-card[data-card="${id}"]`)?.getBoundingClientRect() ?? rectOf(".hand-cards");
+  const to = rectOf(".discard-slot");
+  if (from && to) void flyCard({ html: cardMarkup(card), from, to, duration: 600, endRotate: 6 });
+}
+
 async function confirmPlay(declareUno) {
   if (!pendingCard) return;
   const card = pendingCard;
   const color = selectedColor;
+  suppressOwnThrow = true;
+  flyOwnPlay(card);
   pendingCard = null;
   selectedColor = null;
   modalRoot.innerHTML = "";
