@@ -35,7 +35,7 @@ function rectOf(selector) {
   return element ? element.getBoundingClientRect() : null;
 }
 
-function flyCard({ html, from, to, duration = 620, endRotate = 0, width = 72 }) {
+function flyCard({ html, from, to, duration = 620, startRotate = 0, endRotate = 0, width = 72 }) {
   if (!from || !to || prefersReducedMotion()) return Promise.resolve();
   const layer = ensureFxLayer();
   const el = document.createElement("span");
@@ -46,13 +46,15 @@ function flyCard({ html, from, to, duration = 620, endRotate = 0, width = 72 }) 
   el.style.width = `${width}px`;
   el.style.height = `${Math.round(width * 1.44)}px`;
   el.style.setProperty("--fx-d", `${duration}ms`);
-  el.style.transform = "rotate(0deg)";
+  el.style.setProperty("--r0", `${startRotate}deg`);
+  el.style.setProperty("--r1", `${endRotate}deg`);
+  el.style.transform = "translate3d(0, 0, 0)";
   layer.appendChild(el);
   const dx = Math.round(to.left + to.width / 2 - (from.left + from.width / 2));
   const dy = Math.round(to.top + to.height / 2 - (from.top + from.height / 2));
   return new Promise((resolve) => {
     requestAnimationFrame(() => {
-      el.style.transform = `translate(${dx}px, ${dy}px) rotate(${endRotate}deg)`;
+      el.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
     });
     setTimeout(() => {
       el.style.opacity = "0";
@@ -83,6 +85,8 @@ function animatePickups(view, viewerId) {
           from: deck,
           to,
           duration: 700,
+          startRotate: -8,
+          endRotate: 14,
           width: 46,
         });
       }, index * 150);
@@ -106,6 +110,7 @@ function animateThrowFromDiff(view, viewerId) {
       from,
       to,
       duration: 620,
+      startRotate: -12,
       endRotate: 6,
     });
   }
@@ -130,11 +135,20 @@ const ICONS = {
   replay: svgIcon(`<path d="M3 12a9 9 0 1 0 2.6-6.4"/><path d="M3 4v5h5"/>`),
 };
 
+const CARD_GLYPHS = {
+  skip: `<svg class="card-glyph" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="m6.4 6.4 11.2 11.2"/></svg>`,
+  reverse: `<svg class="card-glyph" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.4h13.6"/><path d="m14.3 5 3.6 3.4-3.6 3.4"/><path d="M20 15.6H6.4"/><path d="m9.7 12.2-3.6 3.4 3.6 3.4"/></svg>`,
+  wild: `<svg class="card-glyph" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" stroke="none"><path d="M12 2.4 14.3 9.7 21.6 12l-7.3 2.3L12 21.6 9.7 14.3 2.4 12l7.3-2.3Z"/></svg>`,
+};
+
 function cardMarkup(card) {
   const colorClass = card.color ?? "wild";
   const symbol = cardName(card);
-  const word = symbol.length > 2 || card.type === "wild" || card.type === "wild10" || card.type === "wild15" || card.type === "wild20";
-  return `<span class="card ${colorClass}" data-card-type="${escapeHtml(card.type)}" aria-hidden="true"><span class="card-corner">${escapeHtml(symbol)}</span><span class="card-center${word ? " word" : ""}">${escapeHtml(card.type === "wild" ? "✦" : symbol)}</span><span class="card-corner bottom">${escapeHtml(symbol)}</span></span>`;
+  const glyph = CARD_GLYPHS[card.type];
+  const center = card.type === "wild" ? CARD_GLYPHS.wild : (glyph ?? escapeHtml(symbol));
+  const corner = glyph ?? escapeHtml(symbol);
+  const word = !glyph && (symbol.length > 2 || card.type === "wild" || card.type === "wild10" || card.type === "wild15" || card.type === "wild20");
+  return `<span class="card ${colorClass}" data-card-type="${escapeHtml(card.type)}" aria-hidden="true"><span class="card-corner">${corner}</span><span class="card-center${word ? " word" : ""}">${center}</span><span class="card-corner bottom">${corner}</span></span>`;
 }
 
 function currentView() {
@@ -330,7 +344,7 @@ function renderGame(view) {
       <section class="arena" aria-label="Game table">
         <div class="table-center">
           <div class="pile-wrap"><button class="draw-pile" data-action="draw" aria-label="Draw a card" ${!yourTurn || view.drawnCardId ? "disabled" : ""}><span class="back-card"></span></button><span class="pile-caption">Draw · ${view.drawCount}</span></div>
-          <div class="pile-wrap"><div class="discard-slot${discardClass}">${view.topCard ? cardMarkup(view.topCard) : ""}</div><span class="pile-caption">Played card</span></div>
+          <div class="pile-wrap"><div class="discard-slot${discardClass}"><span class="color-ring" data-color="${activeColorClass}" aria-hidden="true"></span>${view.topCard ? cardMarkup(view.topCard) : ""}</div><span class="pile-caption">Played card</span></div>
         </div>
       </section>
       <div class="turn-callout"><i class="turn-indicator"></i><span>${turnMessage}</span><span class="active-color"><i class="active-swatch ${activeColorClass}"></i>${activeColorClass} · ${view.direction === 1 ? "clockwise" : "counterclockwise"}</span></div>
@@ -534,7 +548,7 @@ function flyOwnPlay(card) {
   const id = typeof CSS !== "undefined" && CSS.escape ? CSS.escape(card.id) : card.id;
   const from = document.querySelector(`.hand-card[data-card="${id}"]`)?.getBoundingClientRect() ?? rectOf(".hand-cards");
   const to = rectOf(".discard-slot");
-  if (from && to) void flyCard({ html: cardMarkup(card), from, to, duration: 600, endRotate: 6 });
+  if (from && to) void flyCard({ html: cardMarkup(card), from, to, duration: 600, startRotate: -16, endRotate: 6 });
 }
 
 async function confirmPlay(declareUno) {
