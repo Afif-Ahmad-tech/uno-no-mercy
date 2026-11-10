@@ -117,6 +117,19 @@ const cardLabels = { skip: "SKIP", reverse: "↶", draw2: "+2", draw5: "+5", dra
 const cardName = (card) => card.type === "number" ? String(card.value) : cardLabels[card.type];
 const isWildType = (type) => type.startsWith("wild");
 
+const svgIcon = (paths) => `<span class="svg-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths}</svg></span>`;
+const ICONS = {
+  bots: svgIcon(`<path d="M8.5 11a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8Z"/><path d="M2.5 20c0-3 2.6-5 6-5s6 2 6 5"/><path d="M16 4.4a3.4 3.4 0 0 1 0 6.2"/><path d="M15.6 15.2c2.9.4 4.9 2.2 4.9 4.8"/>`),
+  plus: svgIcon(`<path d="M12 5v14M5 12h14"/>`),
+  clock: svgIcon(`<circle cx="12" cy="12" r="9"/><path d="M12 7.5v4.7l3.1 1.9"/>`),
+  burst: svgIcon(`<path d="M12 3v4M12 17v4M5.6 5.6l2.9 2.9M15.5 15.5l2.9 2.9M3 12h4M17 12h4M5.6 18.4l2.9-2.9M15.5 8.5l2.9-2.9"/>`),
+  deck: svgIcon(`<rect x="7" y="4" width="11" height="15.5" rx="2.5"/><path d="M16.5 8h2A1.5 1.5 0 0 1 20 9.5v9A2.5 2.5 0 0 1 17.5 21H10.8"/>`),
+  bolt: svgIcon(`<path d="M13 2 4.7 13.2h5.1L10.6 22l8.4-11.2h-5.1L13 2Z"/>`),
+  copy: svgIcon(`<rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5.5 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v.5"/>`),
+  trophy: svgIcon(`<path d="M8 4h8v6a4 4 0 0 1-8 0V4Z"/><path d="M8 5H5v2a3 3 0 0 0 3 3"/><path d="M16 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v4M8 21h8M10 18.5h4"/>`),
+  replay: svgIcon(`<path d="M3 12a9 9 0 1 0 2.6-6.4"/><path d="M3 4v5h5"/>`),
+};
+
 function cardMarkup(card) {
   const colorClass = card.color ?? "wild";
   const symbol = cardName(card);
@@ -178,9 +191,15 @@ function renderMenu() {
         ${hostView || joinView ? renderSetupForm() : `
           <div class="eyebrow">Choose your table</div>
           <h2>How do you want to play?</h2>
+          <div class="stat-chips">
+            <span class="stat-chip">${ICONS.deck}<strong>150</strong>-card deck</span>
+            <span class="stat-chip">${ICONS.bolt}+10 · +15 · +20</span>
+            <span class="stat-chip">${ICONS.burst}bust at 41</span>
+            <span class="stat-chip">${ICONS.bots}<strong>2–8</strong> players</span>
+          </div>
           <div class="button-stack">
-            <button class="button button-primary" data-action="solo">♟ &nbsp; Play with bots</button>
-            <button class="button button-secondary" data-action="host">＋ &nbsp; Create an online room</button>
+            <button class="button button-primary" data-action="solo">${ICONS.bots}<span>Play with bots</span></button>
+            <button class="button button-secondary" data-action="host">${ICONS.plus}<span>Create an online room</span></button>
           </div>
           <div class="mode-split"><span>OR JOIN A FRIEND</span></div>
           <form data-form="join-inline">
@@ -229,7 +248,7 @@ function renderLobby(view) {
       <div class="eyebrow">Private online table</div>
       <h1>${isHost ? "Your room is ready" : "You’re at the table"}</h1>
       <p>Share this link with your friends. The host starts the no-mercy game once two or more players have joined — up to eight at the table, ${escapeHtml(view.timeLimitMinutes)} minute${view.timeLimitMinutes === 1 ? "" : "s"} on the clock.</p>
-      <div class="room-share"><code>${escapeHtml(view.roomCode)}</code><button class="button button-quiet button-small" data-action="copy-room">Copy invite link</button></div>
+      <div class="room-share"><code>${escapeHtml(view.roomCode)}</code><button class="button button-quiet button-small" data-action="copy-room">${ICONS.copy}<span>Copy invite link</span></button></div>
       <ul class="lobby-list">${players.map((player) => `<li><span>${escapeHtml(player.name)}${player.isHost ? " · host" : ""}</span><small>${player.isHost ? "HOST" : "READY"}</small></li>`).join("")}</ul>
       ${isHost ? `<button class="button button-primary" data-action="start-room" ${players.length < 2 ? "disabled" : ""}>Start game · ${players.length} joined</button>` : `<span class="pill"><i class="pill-dot"></i> Waiting for the host</span>`}
       <p class="notice" role="status">${escapeHtml(notice)}</p>
@@ -278,7 +297,7 @@ function renderGame(view) {
   const drawButton = view.drawnCardId
     ? `<button class="button button-quiet button-small" data-action="pass" ${!yourTurn ? "disabled" : ""}>Pass turn</button>`
     : `<button class="button button-secondary button-small" data-action="draw" ${!yourTurn ? "disabled" : ""}>Draw a card</button>`;
-  const timeLeft = view.timeLeftMs == null ? "" : `<span class="time-chip${view.timeLeftMs < 60_000 ? " low" : ""}">⏱ ${clockFor(view.timeLeftMs)}</span>`;
+  const timeLeft = view.timeLeftMs == null ? "" : `<span class="time-chip${view.timeLeftMs < 60_000 ? " low" : ""}">${ICONS.clock} ${clockFor(view.timeLeftMs)}</span>`;
   const turnMessage = winner
     ? "The table has a winner."
     : own.eliminated
@@ -305,7 +324,7 @@ function renderGame(view) {
     <section class="game-page">
       <div class="game-toolbar">
         <div class="game-title"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span><strong>NO MERCY</strong><small>${mode === "local" ? "Solo table · 3 bots" : `Room ${escapeHtml(view.roomCode)}`}</small></span></div>
-        <div class="toolbar-actions">${timeLeft}${mode === "online" ? `<span class="pill"><i class="pill-dot"></i> Room ${escapeHtml(view.roomCode)}</span>` : ""}${eliminatedCount ? `<span class="pill bust-pill">💥 ${eliminatedCount} bust${eliminatedCount === 1 ? "" : "s"}</span>` : ""}<button class="button button-quiet button-small" data-action="exit">Leave table</button></div>
+        <div class="toolbar-actions">${timeLeft}${mode === "online" ? `<span class="pill"><i class="pill-dot"></i> Room ${escapeHtml(view.roomCode)}</span>` : ""}${eliminatedCount ? `<span class="pill bust-pill">${ICONS.burst} ${eliminatedCount} bust${eliminatedCount === 1 ? "" : "s"}</span>` : ""}<button class="button button-quiet button-small" data-action="exit">Leave table</button></div>
       </div>
       <div class="opponents">${opponents.map((player) => renderOpponent(player, view, viewerId)).join("")}</div>
       <section class="arena" aria-label="Game table">
@@ -333,7 +352,9 @@ function renderWinner(view) {
     : view.winReason === "last-standing"
       ? "Every rival burst past 40 cards. Last one standing."
       : "That’s the final card. Nice playing.";
-  modalRoot.innerHTML = `<div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="winner-title"><div class="finish-mark">✦</div><h2 id="winner-title">${escapeHtml(winner.name)} wins!</h2><p>${reason}</p><div class="modal-actions"><button class="button button-primary" data-action="exit">Play again</button></div></section></div>`;
+  modalRoot.innerHTML = `<div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="winner-title"><div class="finish-mark">${ICONS.trophy}</div><h2 id="winner-title">${escapeHtml(winner.name)} wins!</h2><p>${reason}</p><div class="modal-actions"><button class="button button-primary" data-action="exit">${ICONS.replay}<span>Play again</span></button></div></section></div>`;
+
+
 }
 
 function renderPlayModal() {
