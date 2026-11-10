@@ -276,8 +276,15 @@ export function applyMove(state, playerId, move) {
 function playHand(state, player) {
   const cards = playableCards(state, player);
   if (!cards.length) return false;
+  // Cards that can actually pay their strike: the reshuffle can only free
+  // discardPile minus the retained top card, so bound the deliverable amount.
+  const available = state.drawPile.length + Math.max(state.discardPile.length - 1, 0);
+  const delivers = (card) => !isDrawCard(card) || DRAW_COUNT[card.type] <= available;
   const severity = (card) => (DRAW_COUNT[card.type] ?? 0) * 2 + (card.type === "skip" ? 6 : 0) + (card.type === "reverse" ? 4 : 0) + Number(card.type !== "number");
-  const card = [...cards].sort((a, b) => severity(b) - severity(a))[0];
+  const card = [...cards].sort((a, b) => {
+    if (delivers(a) !== delivers(b)) return delivers(a) ? -1 : 1;
+    return severity(b) - severity(a);
+  })[0];
   const remaining = player.hand.filter((held) => held.id !== card.id);
   const colorCounts = COLORS.map((color) => ({ color, count: remaining.filter((held) => held.color === color).length }));
   colorCounts.sort((a, b) => b.count - a.count);
