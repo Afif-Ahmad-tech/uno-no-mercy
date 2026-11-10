@@ -1,5 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "server.mjs": {
+      "includeFiles": ["index.html", "style.css", "client.mjs", "game.mjs", "lib/roomservice.mjs"]
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
@@ -9,8 +14,5 @@
         { "key": "Cache-Control", "value": "no-store" }
       ]
     }
-  ],
-  "functions": {
-    "api/**/*.mjs": { "maxDuration": 30 }
-  }
+  ]
 }

@@ -72,3 +72,5 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const host = process.env.HOST ?? "0.0.0.0";
   server.listen(port, host, () => console.log(`Color Club is ready at http://localhost:${port}`));
 }
+
+export default createServer();
