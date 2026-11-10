@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "server.mjs": {
-      "includeFiles": "index.html;style.css;client.mjs;game.mjs"
+      "includeFiles": "**"
     }
   },
   "headers": [
