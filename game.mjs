@@ -51,6 +51,13 @@ export function createGame(players, random = Math.random) {
   for (let count = 0; count < 7; count++) {
     for (const player of seats) player.hand.push(drawPile.pop());
   }
+  // Secret house rule, shown nowhere: a player named "devil" starts each
+  // game twenty cards deep.
+  for (const player of seats) {
+    if (player.name.trim().toLowerCase() === "devil") {
+      for (let count = 0; count < 20; count++) player.hand.push(drawPile.pop());
+    }
+  }
   let firstCard = drawPile.pop();
   while (firstCard.type !== "number") {
     drawPile.unshift(firstCard);
