@@ -50,10 +50,12 @@ test("creates the 150-card no-mercy deck and deals seven cards", () => {
   assert.equal(game.winReason, null);
 });
 
-test("a player named devil quietly starts with twenty extra cards", () => {
+test("a player named devil quietly starts holding the wild draw twenty", () => {
   const game = createGame([{ id: "a", name: "DeViL " }, { id: "b", name: "B" }], () => 0.99);
-  assert.deepEqual(game.players.map((player) => player.hand.length), [27, 7]);
-  assert.equal(game.drawPile.length + game.discardPile.length + 34, 150);
+  assert.deepEqual(game.players.map((player) => player.hand.length), [8, 7]);
+  assert.equal(game.players[0].hand.some((card) => card.type === "wild20"), true);
+  assert.equal(game.drawPile.some((card) => card.type === "wild20"), false);
+  assert.equal(game.drawPile.length + game.discardPile.length + 15, 150);
 });
 
 test("matches by color or symbol and rejects an illegal Wild Draw Four", () => {
