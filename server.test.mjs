@@ -63,7 +63,9 @@ test("online rooms validate turns and keep every other hand private", async (con
 
   const page = await fetch(origin);
   assert.equal(page.status, 200);
-  assert.match(await page.text(), /Color Club/);
+  const html = await page.text();
+  assert.match(html, /UNO No Mercy/);
+  assert.match(html, /independent fan-made game/);
 });
 
 test("rooms seat at most 8 players, require 2, and validate the time limit", async (context) => {

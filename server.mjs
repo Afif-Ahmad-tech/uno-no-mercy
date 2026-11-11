@@ -70,7 +70,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const server = createServer();
   const port = Number(process.env.PORT ?? 3000);
   const host = process.env.HOST ?? "0.0.0.0";
-  server.listen(port, host, () => console.log(`Color Club is ready at http://localhost:${port}`));
+  server.listen(port, host, () => console.log(`UNO No Mercy is ready at http://localhost:${port}`));
 }
 
 export default createServer();

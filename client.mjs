@@ -351,7 +351,7 @@ function renderGame(view) {
   app.innerHTML = `
     <section class="game-page${gameEntered ? "" : " entering"}">
       <div class="game-toolbar">
-        <div class="game-title"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span><strong>NO MERCY</strong><small>${mode === "local" ? "Solo table · 3 bots" : `Room ${escapeHtml(view.roomCode)}`}</small></span></div>
+        <div class="game-title"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span><strong>UNO NO MERCY</strong><small>${mode === "local" ? "Solo table · 3 bots" : `Room ${escapeHtml(view.roomCode)}`}</small></span></div>
         <div class="toolbar-actions">${timeLeft}${mode === "online" ? `<span class="pill"><i class="pill-dot"></i> Room ${escapeHtml(view.roomCode)}</span>` : ""}${eliminatedCount ? `<span class="pill bust-pill">${ICONS.burst} ${eliminatedCount} bust${eliminatedCount === 1 ? "" : "s"}</span>` : ""}<button class="button button-quiet button-small" data-action="exit">Leave table</button></div>
       </div>
       <div class="opponents">${opponents.map((player) => renderOpponent(player, view, viewerId, player.eliminated && !prevBusted.has(player.id))).join("")}</div>

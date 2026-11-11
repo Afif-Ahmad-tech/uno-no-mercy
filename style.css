@@ -88,7 +88,8 @@ button:focus-visible, input:focus-visible, a:focus-visible, select:focus-visible
 .brand-mark i:nth-child(4) { background: var(--green); box-shadow: 0 0 12px rgba(43, 215, 138, .4); }
 .header-note, footer { color: var(--faint); font-size: 10px; letter-spacing: .22em; font-weight: 700; text-transform: uppercase; }
 #app { flex: 1; display: flex; flex-direction: column; }
-footer { display: flex; justify-content: center; gap: 13px; padding: 24px 0 20px; }
+footer { display: flex; flex-wrap: wrap; justify-content: center; gap: 13px; padding: 24px 0 20px; }
+footer .legal { flex-basis: 100%; text-align: center; color: var(--faint); font-size: 10.5px; font-weight: 400; letter-spacing: .02em; text-transform: none; line-height: 1.5; }
 footer span { color: var(--gold); }
 
 /* ---------------------------------- Menu ---------------------------------- */
@@ -609,6 +610,8 @@ footer span { color: var(--gold); }
    the footer steps out so toolbar + table + hand always fit the screen. */
 .page-shell:has(.game-page) { height: 100dvh; }
 .page-shell:has(.game-page) footer { display: none; }
+/* In a game the toolbar already carries the brand — the site header would be a second, duplicate logo. */
+.page-shell:has(.game-page) .site-header { display: none; }
 @media (max-width: 1024px) {
   .menu { grid-template-columns: 1fr; gap: 26px; padding: 40px 2% 40px; }
   .menu-copy { max-width: 560px; }
