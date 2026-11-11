@@ -483,11 +483,8 @@ footer span { color: var(--gold); }
 .hand-card.just-drawn .card { animation: card-pop .55s var(--ease-spring); }
 .empty-hand { align-self: center; color: var(--faint); font-size: 12.5px; }
 
-/* Feedback micro-motion: hover tilt, pile press, and the bust hit. */
+/* Feedback micro-motion: pile press, and the bust hit. */
 .hand-card .card { transition: transform var(--t-base) var(--ease-spring), filter var(--t-base), box-shadow var(--t-base); }
-@media (prefers-reduced-motion: no-preference) {
-  .hand-card:not(:disabled):hover .card { transform: perspective(700px) rotateX(-9deg) rotateY(5deg) translateY(-2px); }
-}
 .draw-pile:active:not(:disabled) { transform: rotate(-7deg) translateY(3px) scale(.95); }
 .opponent.just-busted { animation: bust-hit .85s var(--ease-out); }
 @keyframes bust-hit {
