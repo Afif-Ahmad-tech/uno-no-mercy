@@ -24,6 +24,7 @@ export function createDeck(random = Math.random) {
     for (const type of ["skip", "reverse"]) {
       for (let copy = 1; copy <= 3; copy++) pool.push({ id: `${color}-${type}-${copy}`, color, type });
     }
+    for (let copy = 1; copy <= 2; copy++) pool.push({ id: `${color}-discardall-${copy}`, color, type: "discardAll" });
     for (const type of ["draw2", "draw5", "draw10"]) {
       for (let copy = 1; copy <= 2; copy++) pool.push({ id: `${color}-${type}-${copy}`, color, type });
     }
@@ -273,6 +274,15 @@ export function applyMove(state, playerId, move) {
     state.discardPile.push(card);
     state.activeColor = card.color ?? move.color;
     state.drawnCardId = null;
+    // Discard All: the matching-colour rest of the hand joins the played
+    // card on the pile. It can empty the hand straight to a win.
+    if (card.type === "discardAll") {
+      const swept = player.hand.filter((held) => held.color === card.color);
+      if (swept.length) {
+        player.hand = player.hand.filter((held) => held.color !== card.color);
+        state.discardPile.push(...swept);
+      }
+    }
     if (player.hand.length === 1) {
       state.unoCalled[playerId] = move.declareUno === true;
       state.missedUno = move.declareUno ? null : { playerId, expiresOn: null };
@@ -357,7 +367,9 @@ function playHand(state, player) {
   const payable = cards.filter(delivers);
   if (state.stackAmount > 0 && !payable.length) return false;
   const options = payable.length ? payable : cards;
-  const severity = (card) => (DRAW_COUNT[card.type] ?? 0) * 2 + (card.type === "skip" ? 6 : 0) + (card.type === "reverse" ? 4 : 0) + Number(card.type !== "number");
+  const severity = (card) => (DRAW_COUNT[card.type] ?? 0) * 2 + (card.type === "skip" ? 6 : 0) + (card.type === "reverse" ? 4 : 0)
+    + (card.type === "discardAll" ? player.hand.filter((held) => held.color === card.color).length * 3 : 0)
+    + Number(card.type !== "number");
   const card = [...options].sort((a, b) => severity(b) - severity(a))[0];
   const remaining = player.hand.filter((held) => held.id !== card.id);
   const colorCounts = COLORS.map((color) => ({ color, count: remaining.filter((held) => held.color === color).length }));

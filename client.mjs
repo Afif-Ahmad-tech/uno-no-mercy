@@ -129,9 +129,16 @@ const savedName = () => {
 const rememberName = (name) => {
   try { localStorage.setItem(NAME_KEY, String(name).trim()); } catch { /* private mode */ }
 };
-const cardLabels = { skip: "SKIP", reverse: "↶", draw2: "+2", draw5: "+5", draw10: "+10", draw15: "+15", draw20: "+20", wild: "WILD", wild4: "+4", wild10: "+10", wild15: "+15", wild20: "+20" };
+const cardLabels = { skip: "SKIP", reverse: "↶", draw2: "+2", draw5: "+5", draw10: "+10", draw15: "+15", draw20: "+20", discardAll: "ALL", wild: "WILD", wild4: "+4", wild10: "+10", wild15: "+15", wild20: "+20" };
 const cardName = (card) => card.type === "number" ? String(card.value) : cardLabels[card.type];
 const isWildType = (type) => type.startsWith("wild");
+
+// Display order only — the server hand is untouched. Colours group together
+// (red → yellow → green → blue, wilds last) so matching plays sit side by side.
+function sortHand(cards) {
+  const rank = (card) => (COLORS.indexOf(card.color ?? null) + COLORS.length + 1) % (COLORS.length + 1);
+  return [...cards].sort((a, b) => (rank(a) - rank(b)) || String(a.value ?? a.type).localeCompare(String(b.value ?? b.type)));
+}
 
 const svgIcon = (paths) => `<span class="svg-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths}</svg></span>`;
 const ICONS = {
@@ -318,7 +325,7 @@ function renderGame(view) {
   const called = own.unoCalled === true;
   const canCall = own.cardCount === 1 && !called && !own.eliminated && (yourTurn || view.missedUno === viewerId);
   const canCatch = view.missedUno && view.missedUno !== viewerId && view.status === "playing";
-  const cards = own.hand ?? [];
+  const cards = sortHand(own.hand ?? []);
   const prevOwn = lastView?.players?.find?.((entry) => entry.id === viewerId) ?? null;
   const prevOwnIds = new Set(prevOwn?.hand?.map((entry) => entry.id) ?? []);
   const justDrawnIds = cards.filter((card) => !prevOwnIds.has(card.id)).map((card) => card.id);

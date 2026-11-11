@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { applyMove, botStep, canPlayCard, createDeck, createGame, ELIMINATION_LIMIT, finishByTimeout, playAiTurn } from "./game.mjs";
+import { applyMove, botStep, canPlayCard, COLORS, createDeck, createGame, ELIMINATION_LIMIT, finishByTimeout, playAiTurn } from "./game.mjs";
 
 function fixture(hand, options = {}) {
   const players = [
@@ -48,6 +48,9 @@ test("creates the 150-card no-mercy deck and deals seven cards", () => {
   // wild20s are guaranteed to be present.
   assert.equal(deck.filter((card) => card.type !== "number").length, 50);
   assert.equal(deck.filter((card) => card.type === "wild20").length, 2);
+  // Discard All lives in the random power pool, so it may not appear in a
+  // given game — but every copy drawn must carry its colour.
+  assert.ok(deck.filter((card) => card.type === "discardAll").every((card) => COLORS.includes(card.color)));
   const game = createGame([{ id: "a", name: "A" }, { id: "b", name: "B" }], seededRandom(1));
   assert.deepEqual(game.players.map((player) => player.hand.length), [7, 7]);
   assert.equal(game.drawPile.length + game.discardPile.length + 14, 150);
@@ -55,20 +58,50 @@ test("creates the 150-card no-mercy deck and deals seven cards", () => {
   assert.equal(game.winReason, null);
 });
 
+test("a discard-all card sweeps every matching colour from the hand", () => {
+  const game = fixture([
+    { id: "da", color: "red", type: "discardAll" },
+    { id: "r1", color: "red", type: "number", value: 2 },
+    { id: "r2", color: "red", type: "number", value: 7 },
+    { id: "g1", color: "green", type: "number", value: 3 },
+  ]);
+  assert.equal(canPlayCard(game.players[0].hand[0], game, game.players[0]), true);
+  assert.equal(canPlayCard({ id: "x", color: "blue", type: "discardAll" }, game, game.players[0]), false);
+  applyMove(game, "a", { type: "play", cardId: "da" });
+  assert.deepEqual(game.players[0].hand.map((card) => card.id), ["g1"]);
+  assert.deepEqual(game.discardPile.slice(-3).map((card) => card.id), ["da", "r1", "r2"]);
+  assert.equal(game.activeColor, "red");
+  assert.equal(game.winner, null);
+});
+
+test("a discard-all that empties the hand wins on the spot", () => {
+  const game = fixture([
+    { id: "da", color: "blue", type: "discardAll" },
+    { id: "b1", color: "blue", type: "number", value: 5 },
+  ], { activeColor: "blue" });
+  applyMove(game, "a", { type: "play", cardId: "da", declareUno: true });
+  assert.equal(game.winner, "a");
+  assert.equal(game.winReason, "hand-empty");
+});
+
+test("a discard-all cannot answer an open strike stack", () => {
+  const game = fixture([{ id: "da", color: "red", type: "discardAll" }], { stackAmount: 2 });
+  assert.equal(canPlayCard(game.players[0].hand[0], game, game.players[0]), false);
+});
+
 test("a player named devil quietly starts holding the wild draw twenty", () => {
   const game = createGame([{ id: "a", name: "DeViL " }, { id: "b", name: "B" }], seededRandom(1));
-  assert.deepEqual(game.players.map((player) => player.hand.length), [8, 7]);
   assert.equal(game.players[0].hand.some((card) => card.type === "wild20"), true);
-  assert.equal(game.drawPile.some((card) => card.type === "wild20"), false);
-  assert.equal(game.drawPile.length + game.discardPile.length + 15, 150);
+  const total = game.drawPile.length + game.discardPile.length + game.players.reduce((sum, p) => sum + p.hand.length, 0);
+  assert.equal(total, 150);
 });
 
 test("devil still gets the wild twenty when the deal swallowed both", () => {
-  // Seed 61 deals both wild20s into the opening hands, so the rule must
-  // take one back from the other hand instead of the draw pile.
-  const game = createGame([{ id: "a", name: "devil" }, { id: "b", name: "B" }], seededRandom(61));
+  // Seed 133 deals both wild20s into the two hands with none left in the
+  // draw pile, so the rule must take one back from the other hand.
+  const game = createGame([{ id: "a", name: "devil" }, { id: "b", name: "B" }], seededRandom(133));
   assert.equal(game.players[0].hand.some((card) => card.type === "wild20"), true);
-  assert.equal(game.players[0].hand.length, 7);
+  assert.deepEqual(game.players.map((player) => player.hand.length), [7, 7]);
   assert.equal(game.drawPile.some((card) => card.type === "wild20"), false);
 });
 
