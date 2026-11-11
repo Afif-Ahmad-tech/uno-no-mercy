@@ -63,6 +63,15 @@ test("a player named devil quietly starts holding the wild draw twenty", () => {
   assert.equal(game.drawPile.length + game.discardPile.length + 15, 150);
 });
 
+test("devil still gets the wild twenty when the deal swallowed both", () => {
+  // Seed 61 deals both wild20s into the opening hands, so the rule must
+  // take one back from the other hand instead of the draw pile.
+  const game = createGame([{ id: "a", name: "devil" }, { id: "b", name: "B" }], seededRandom(61));
+  assert.equal(game.players[0].hand.some((card) => card.type === "wild20"), true);
+  assert.equal(game.players[0].hand.length, 7);
+  assert.equal(game.drawPile.some((card) => card.type === "wild20"), false);
+});
+
 test("matches by color or symbol and rejects an illegal Wild Draw Four", () => {
   const game = fixture([
     { id: "blue-four", color: "blue", type: "number", value: 4 },

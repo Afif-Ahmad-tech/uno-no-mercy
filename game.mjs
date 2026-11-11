@@ -73,10 +73,21 @@ export function createGame(players, random = Math.random) {
   // Secret house rule, shown nowhere: a player named "devil" starts each
   // game holding the Wild Draw Twenty.
   for (const player of seats) {
-    if (player.name.trim().toLowerCase() === "devil") {
-      const index = drawPile.findIndex((card) => card.type === "wild20");
-      if (index !== -1) player.hand.push(drawPile.splice(index, 1)[0]);
+    if (player.name.trim().toLowerCase() !== "devil") continue;
+    if (player.hand.some((card) => card.type === "wild20")) continue; // already dealt one
+    const index = drawPile.findIndex((card) => card.type === "wild20");
+    if (index !== -1) {
+      player.hand.push(drawPile.splice(index, 1)[0]);
+      continue;
     }
+    // Both wild20s were dealt into hands — take one back in exchange for a
+    // random card so the rule always holds.
+    const holder = seats.find((seat) => seat !== player && seat.hand.some((card) => card.type === "wild20"));
+    if (!holder) continue;
+    const cardIndex = holder.hand.findIndex((card) => card.type === "wild20");
+    const stolen = holder.hand[cardIndex];
+    holder.hand[cardIndex] = player.hand.pop();
+    player.hand.push(stolen);
   }
   let firstCard = drawPile.pop();
   while (firstCard.type !== "number") {
