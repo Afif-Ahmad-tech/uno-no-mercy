@@ -474,6 +474,9 @@ footer span { color: var(--gold); }
 /* Waiting for your turn: the hand is clearly dimmed but the colours stay
    readable, so you can plan which pile to build toward. */
 .hand-cards.waiting .hand-card .card { filter: grayscale(.45) brightness(.68) saturate(.72); }
+/* Hovering the hand slides the card that follows a playable one clear, so
+   every playable number is readable. Unplayable cards keep their 85% stack. */
+.hand-cards:hover .hand-card.is-playable + .hand-card { margin-left: 0; }
 .hand-card.just-drawn .card { animation: card-pop .55s var(--ease-spring); }
 .empty-hand { align-self: center; color: var(--faint); font-size: 12.5px; }
 
