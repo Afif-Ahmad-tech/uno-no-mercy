@@ -25,25 +25,30 @@ function fixture(hand, options = {}) {
   };
 }
 
+function seededRandom(seed) {
+  return () => {
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = seed;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 test("creates the 150-card no-mercy deck and deals seven cards", () => {
   const deck = createDeck();
   assert.equal(deck.length, 150);
+  assert.equal(new Set(deck.map((card) => card.id)).size, 150);
   for (const color of ["red", "yellow", "green", "blue"]) {
-    assert.equal(deck.filter((card) => card.color === color && card.type === "number").length, 19);
-    for (const type of ["skip", "reverse"]) {
-      assert.equal(deck.filter((card) => card.color === color && card.type === type).length, 3);
-    }
-    for (const type of ["draw2", "draw5", "draw10"]) {
-      assert.equal(deck.filter((card) => card.color === color && card.type === type).length, 2);
-    }
-    for (const type of ["draw15", "draw20"]) {
-      assert.equal(deck.filter((card) => card.color === color && card.type === type).length, 1);
-    }
+    // The base 19 numbers per color are fixed; a random number backfill
+    // tops the deck up after the power-card draw.
+    assert.ok(deck.filter((card) => card.color === color && card.type === "number").length >= 19);
   }
-  for (const [type, count] of [["wild", 6], ["wild4", 4], ["wild10", 4], ["wild15", 2], ["wild20", 2]]) {
-    assert.equal(deck.filter((card) => card.type === type).length, count);
-  }
-  const game = createGame([{ id: "a", name: "A" }, { id: "b", name: "B" }], () => 0.99);
+  // Power cards are a random draw of the pool, capped at 50; only the two
+  // wild20s are guaranteed to be present.
+  assert.equal(deck.filter((card) => card.type !== "number").length, 50);
+  assert.equal(deck.filter((card) => card.type === "wild20").length, 2);
+  const game = createGame([{ id: "a", name: "A" }, { id: "b", name: "B" }], seededRandom(1));
   assert.deepEqual(game.players.map((player) => player.hand.length), [7, 7]);
   assert.equal(game.drawPile.length + game.discardPile.length + 14, 150);
   assert.equal(game.discardPile[0].type, "number");
@@ -51,7 +56,7 @@ test("creates the 150-card no-mercy deck and deals seven cards", () => {
 });
 
 test("a player named devil quietly starts holding the wild draw twenty", () => {
-  const game = createGame([{ id: "a", name: "DeViL " }, { id: "b", name: "B" }], () => 0.99);
+  const game = createGame([{ id: "a", name: "DeViL " }, { id: "b", name: "B" }], seededRandom(1));
   assert.deepEqual(game.players.map((player) => player.hand.length), [8, 7]);
   assert.equal(game.players[0].hand.some((card) => card.type === "wild20"), true);
   assert.equal(game.drawPile.some((card) => card.type === "wild20"), false);

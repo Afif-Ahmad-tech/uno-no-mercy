@@ -3,8 +3,10 @@ export const ELIMINATION_LIMIT = 40;
 export const WILD_TYPES = ["wild", "wild4", "wild10", "wild15", "wild20"];
 
 const DRAW_COUNT = { draw2: 2, draw5: 5, draw10: 10, draw15: 15, draw20: 20, wild4: 4, wild10: 10, wild15: 15, wild20: 20 };
+const TOTAL_CARDS = 150;
+const POWER_CARDS = 50;
 
-export function createDeck() {
+export function createDeck(random = Math.random) {
   const deck = [];
   for (const color of COLORS) {
     deck.push({ id: `${color}-0`, color, type: "number", value: 0 });
@@ -13,21 +15,38 @@ export function createDeck() {
         deck.push({ id: `${color}-${value}-${copy}`, color, type: "number", value });
       }
     }
+  }
+  // Power cards are a random arsenal: every game draws 48 of the 72-card
+  // pool, so no two tables see the same weapon mix. The two Wild Draw
+  // Twenties stay guaranteed — the "devil" house rule depends on one.
+  const pool = [];
+  for (const color of COLORS) {
     for (const type of ["skip", "reverse"]) {
-      for (let copy = 1; copy <= 3; copy++) deck.push({ id: `${color}-${type}-${copy}`, color, type });
+      for (let copy = 1; copy <= 3; copy++) pool.push({ id: `${color}-${type}-${copy}`, color, type });
     }
     for (const type of ["draw2", "draw5", "draw10"]) {
-      for (let copy = 1; copy <= 2; copy++) deck.push({ id: `${color}-${type}-${copy}`, color, type });
+      for (let copy = 1; copy <= 2; copy++) pool.push({ id: `${color}-${type}-${copy}`, color, type });
     }
-    for (const type of ["draw15", "draw20"]) deck.push({ id: `${color}-${type}`, color, type });
+    for (const type of ["draw15", "draw20"]) pool.push({ id: `${color}-${type}`, color, type });
   }
-  for (let copy = 1; copy <= 6; copy++) deck.push({ id: `wild-${copy}`, color: null, type: "wild" });
-  for (let copy = 1; copy <= 4; copy++) deck.push({ id: `wild4-${copy}`, color: null, type: "wild4" });
-  for (let copy = 1; copy <= 4; copy++) deck.push({ id: `wild10-${copy}`, color: null, type: "wild10" });
-  deck.push({ id: "wild15-1", color: null, type: "wild15" });
-  deck.push({ id: "wild15-2", color: null, type: "wild15" });
+  for (let copy = 1; copy <= 6; copy++) pool.push({ id: `wild-${copy}`, color: null, type: "wild" });
+  for (let copy = 1; copy <= 4; copy++) pool.push({ id: `wild4-${copy}`, color: null, type: "wild4" });
+  for (let copy = 1; copy <= 4; copy++) pool.push({ id: `wild10-${copy}`, color: null, type: "wild10" });
+  pool.push({ id: "wild15-1", color: null, type: "wild15" });
+  pool.push({ id: "wild15-2", color: null, type: "wild15" });
+  deck.push(...shuffle(pool, random).slice(0, POWER_CARDS - 2));
   deck.push({ id: "wild20-1", color: null, type: "wild20" });
   deck.push({ id: "wild20-2", color: null, type: "wild20" });
+  // Top the deck back up to 150 with plain numbers.
+  const copies = new Map();
+  while (deck.length < TOTAL_CARDS) {
+    const color = COLORS[Math.floor(random() * COLORS.length)];
+    const value = Math.floor(random() * 10);
+    const key = `${color}-${value}`;
+    const copy = (copies.get(key) ?? (value === 0 ? 1 : 2)) + 1;
+    copies.set(key, copy);
+    deck.push({ id: `${key}-${copy}`, color, type: "number", value });
+  }
   return deck;
 }
 
@@ -47,7 +66,7 @@ export function createGame(players, random = Math.random) {
   const ids = players.map((player) => player.id);
   if (new Set(ids).size !== ids.length || ids.some((id) => !id)) throw new Error("Player IDs must be unique.");
   const seats = players.map(({ id, name }) => ({ id, name, hand: [], eliminated: false }));
-  const drawPile = shuffle(createDeck(), random);
+  const drawPile = shuffle(createDeck(random), random);
   for (let count = 0; count < 7; count++) {
     for (const player of seats) player.hand.push(drawPile.pop());
   }
