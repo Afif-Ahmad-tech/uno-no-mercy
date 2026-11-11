@@ -120,6 +120,15 @@ function animateThrowFromDiff(view, viewerId) {
 }
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+
+// The player's name lives in their browser, so repeat visits never retype it.
+const NAME_KEY = "unomercy-player-name";
+const savedName = () => {
+  try { return localStorage.getItem(NAME_KEY)?.trim() || null; } catch { return null; }
+};
+const rememberName = (name) => {
+  try { localStorage.setItem(NAME_KEY, String(name).trim()); } catch { /* private mode */ }
+};
 const cardLabels = { skip: "SKIP", reverse: "↶", draw2: "+2", draw5: "+5", draw10: "+10", draw15: "+15", draw20: "+20", wild: "WILD", wild4: "+4", wild10: "+10", wild15: "+15", wild20: "+20" };
 const cardName = (card) => card.type === "number" ? String(card.value) : cardLabels[card.type];
 const isWildType = (type) => type.startsWith("wild");
@@ -241,7 +250,7 @@ function renderSetupForm() {
       <div class="eyebrow">Invite your people</div><h2>Create a no-mercy table</h2>
       <form data-form="host">
         <div class="name-row">
-          <label><span class="field-label">Your name</span><input class="field" name="name" maxlength="20" placeholder="Player" value="Player" required></label>
+          <label><span class="field-label">Your name</span><input class="field" name="name" maxlength="20" placeholder="Player" value="${escapeHtml(savedName() ?? "Player")}" required></label>
           <label><span class="field-label">Game time limit</span><select class="field" name="timeLimit">${timeOptions}</select></label>
         </div>
         <div class="button-stack"><button class="button button-primary" type="submit">Create room</button><button class="button button-quiet" type="button" data-action="menu">Back</button></div>
@@ -251,7 +260,7 @@ function renderSetupForm() {
     <div class="eyebrow">Your friend saved you a seat</div><h2>Join an online table</h2>
     <form data-form="join">
       <div class="name-row">
-        <label><span class="field-label">Your name</span><input class="field" name="name" maxlength="20" placeholder="Player" value="Player" required></label>
+        <label><span class="field-label">Your name</span><input class="field" name="name" maxlength="20" placeholder="Player" value="${escapeHtml(savedName() ?? "Player")}" required></label>
         <label><span class="field-label">Room code</span><input class="field room-code" name="room" maxlength="6" placeholder="ABC123" value="${escapeHtml(inviteCode)}" autocomplete="off" required></label>
       </div>
       <div class="button-stack"><button class="button button-primary" type="submit">Join room</button><button class="button button-quiet" type="button" data-action="menu">Back</button></div>
@@ -477,7 +486,7 @@ function startSolo() {
   session = null;
   roomState = null;
   localGame = createGame([
-    { id: "you", name: "You" },
+    { id: "you", name: savedName() ?? "You" },
     { id: "bot-milo", name: "Milo" },
     { id: "bot-nova", name: "Nova" },
     { id: "bot-ash", name: "Ash" },
@@ -645,12 +654,16 @@ app.addEventListener("submit", async (event) => {
   const values = new FormData(form);
   try {
     if (form.dataset.form === "host") {
-      const result = await request("/api/rooms", { method: "POST", body: { name: values.get("name"), timeLimit: Number(values.get("timeLimit")) } });
+      const name = String(values.get("name") ?? "").trim();
+      rememberName(name);
+      const result = await request("/api/rooms", { method: "POST", body: { name, timeLimit: Number(values.get("timeLimit")) } });
       enterRoom(result, true);
     } else if (form.dataset.form === "join" || form.dataset.form === "join-inline") {
       const roomCode = String(values.get("room") ?? inviteCode).trim().toUpperCase();
       if (!/^[A-F\d]{6}$/.test(roomCode)) throw new Error("Enter the six-character room code.");
-      const result = await request(`/api/rooms/${roomCode}/join`, { method: "POST", body: { name: values.get("name") || "Player" } });
+      const name = String(values.get("name") ?? "").trim() || "Player";
+      rememberName(name);
+      const result = await request(`/api/rooms/${roomCode}/join`, { method: "POST", body: { name } });
       enterRoom(result, false);
     }
   } catch (error) {
