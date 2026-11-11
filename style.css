@@ -207,8 +207,8 @@ footer span { color: var(--gold); }
 .notice { margin: 14px 0 0; color: #ffd27a; font-size: 12.5px; line-height: 1.5; min-height: 18px; }
 
 /* --------------------------------- Game page --------------------------------- */
-.game-page { flex: 1; display: flex; flex-direction: column; padding: 22px 0 10px; }
-.game-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+.game-page { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 16px 0 8px; }
+.game-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 10px; flex-wrap: wrap; }
 .game-title { display: flex; align-items: center; gap: 12px; }
 .game-title strong { display: block; font-family: "Russo One", "Segoe UI", sans-serif; font-weight: 400; font-size: 13px; letter-spacing: .07em; }
 .game-title small { color: var(--muted); font-size: 11px; display: block; margin-top: 3px; }
@@ -225,33 +225,19 @@ footer span { color: var(--gold); }
 }
 .pill-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; box-shadow: 0 0 9px var(--green); }
 
-/* Round-table seats: evenly placed on the felt rim, viewer at the bottom. */
+.opponents { display: flex; flex-wrap: wrap; justify-content: center; gap: 11px; margin: 0 auto 14px; min-height: 58px; }
 .opponent {
-  position: absolute;
-  left: var(--seat-x, 50%);
-  top: var(--seat-y, 50%);
-  transform: translate(-50%, -50%);
-  z-index: 2;
-  display: flex; align-items: center; gap: 9px;
+  display: flex; align-items: center; gap: 10px;
   background: var(--surface-glass);
   border: 1px solid var(--line);
-  border-radius: var(--r-pill);
-  padding: 6px 12px;
-  min-width: 136px; max-width: 178px;
+  border-radius: var(--r-md);
+  padding: 8px 12px;
+  min-width: 158px;
   backdrop-filter: blur(10px);
   transition: border-color var(--t-base), box-shadow var(--t-base);
 }
 .opponent.is-turn { border-color: rgba(245, 196, 84, .65); box-shadow: 0 0 0 2px rgba(245, 196, 84, .09); }
-.opponent.is-self { border-color: rgba(167, 139, 250, .45); box-shadow: 0 0 0 2px rgba(124, 58, 237, .13); }
 .opponent.is-out { opacity: .58; filter: saturate(.5); }
-.seat-copy { display: grid; gap: 2px; justify-items: start; min-width: 0; }
-.avatar.you { background: linear-gradient(140deg, #b39af5, #7c3aed); color: #f3efff; }
-/* Larger tables get denser seats so every chair still fits the rim. */
-.seats-7 .opponent, .seats-8 .opponent { min-width: 104px; padding: 5px 9px; gap: 7px; }
-.seats-7 .avatar, .seats-8 .avatar { width: 26px; height: 26px; border-radius: 9px; }
-.seats-7 .player-name, .seats-8 .player-name { max-width: 62px; font-size: 11px; }
-.seats-7 .player-count, .seats-8 .player-count { font-size: 9.5px; }
-.seats-7 .mini-back, .seats-8 .mini-back { display: none; }
 .avatar {
   width: 32px; height: 32px; border-radius: 12px;
   display: grid; place-items: center;
@@ -260,8 +246,8 @@ footer span { color: var(--gold); }
 }
 .avatar.bot { background: linear-gradient(140deg, #8fb6f6, #5f7ee0); }
 .avatar.friend { background: linear-gradient(140deg, #d8a0e8, #a05bc0); }
-.player-name { font-size: 12.5px; font-weight: 700; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.player-count { color: var(--faint); font-size: 10.5px; margin-top: 3px; }
+.player-name { display: block; font-size: 12.5px; font-weight: 700; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.player-count { display: block; color: var(--faint); font-size: 10.5px; margin-top: 3px; }
 .mini-hand { margin-left: auto; display: flex; align-items: center; }
 .mini-back {
   width: 14px; height: 20px;
@@ -273,45 +259,44 @@ footer span { color: var(--gold); }
 .out-badge { background: rgba(244, 63, 94, .16); border: 1px solid rgba(244, 63, 94, .45); color: #ffb9c4; }
 .uno-badge { background: rgba(245, 196, 84, .16); border: 1px solid rgba(245, 196, 84, .5); color: var(--gold); }
 
-/* Round felt table with seats around the rim */
+/* Felt table */
 .arena {
   position: relative;
-  height: clamp(300px, 52vh, 560px);
-  aspect-ratio: 1;
-  flex-shrink: 0;
-  align-self: center;
-  margin: 4px auto 16px;
+  min-height: clamp(170px, 21vh, 288px);
+  flex: 1;
   display: grid;
   place-items: center;
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  border: 1px solid rgba(167, 139, 250, .19);
+  background:
+    radial-gradient(ellipse 78% 62% at 50% 34%, rgba(124, 58, 237, .17), transparent 62%),
+    radial-gradient(ellipse at 50% 108%, rgba(244, 63, 94, .1), transparent 52%),
+    repeating-linear-gradient(112deg, rgba(255, 255, 255, .014) 0 2px, transparent 2px 9px),
+    linear-gradient(180deg, #1d1942 0%, #161233 54%, #100d28 100%);
+  box-shadow: inset 0 0 110px rgba(6, 4, 18, .5), var(--shadow-2);
 }
 .arena::before {
   content: "";
-  position: absolute;
-  inset: 8%;
-  border-radius: 50%;
-  border: 1.5px solid rgba(167, 139, 250, .19);
+  position: absolute; inset: 20px;
+  border: 1.5px solid rgba(167, 139, 250, .14);
+  border-radius: 44% 44% 40% 40% / 56% 56% 44% 44%;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 78% 62% at 50% 40%, rgba(124, 58, 237, .17), transparent 62%),
-    radial-gradient(ellipse at 50% 104%, rgba(244, 63, 94, .1), transparent 52%),
-    radial-gradient(ellipse at 22% 26%, rgba(255, 255, 255, .05) 0 7%, transparent 30%),
-    repeating-linear-gradient(112deg, rgba(255, 255, 255, .014) 0 2px, transparent 2px 9px),
-    linear-gradient(180deg, #1d1942 0%, #161233 54%, #100d28 100%);
-  box-shadow: inset 0 0 96px rgba(6, 4, 18, .5), var(--shadow-2);
+    radial-gradient(ellipse at 18% 22%, rgba(255, 255, 255, .05) 0 7%, transparent 30%),
+    radial-gradient(ellipse at 84% 80%, rgba(244, 63, 94, .05) 0 6%, transparent 30%);
 }
 .arena::after {
   content: "NO MERCY";
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%) rotate(-11deg);
   color: rgba(199, 172, 255, .08);
   font-family: "Russo One", "Segoe UI", sans-serif;
-  font-size: clamp(18px, 3vw, 28px);
+  font-size: clamp(20px, 3.4vw, 30px);
   letter-spacing: .4em;
+  transform: rotate(-11deg);
   pointer-events: none;
 }
-.table-center { position: relative; z-index: 1; display: flex; align-items: center; gap: clamp(20px, 4vw, 60px); }
+.table-center { position: relative; z-index: 1; display: flex; align-items: center; gap: clamp(28px, 7vw, 92px); }
 .pile-wrap { display: grid; justify-items: center; gap: 11px; }
 .pile-caption { color: rgba(255, 255, 255, .52); font-size: 9px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
 .pile-caption.stack-live { color: var(--gold); text-shadow: 0 0 12px rgba(245, 196, 84, .45); }
@@ -425,9 +410,16 @@ footer span { color: var(--gold); }
 .active-swatch { width: 10px; height: 10px; border-radius: 50%; background: var(--swatch); box-shadow: 0 0 12px var(--swatch); }
 .active-swatch.red { --swatch: var(--red); }.active-swatch.yellow { --swatch: var(--yellow); }.active-swatch.green { --swatch: var(--green); }.active-swatch.blue { --swatch: var(--blue); }
 
-.turn-callout { min-height: 56px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 11px; color: #b8c0df; font-size: 13px; }
+.turn-callout { min-height: 42px; text-align: center; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 11px; color: #b8c0df; font-size: 13px; }
 .turn-indicator { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 14px var(--gold); }
-.control-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; min-height: 44px; margin: 0 0 15px; }
+.control-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; min-height: 40px; margin: 0 0 8px; }
+.rotate-hint {
+  display: none; align-items: center; gap: 8px;
+  margin: 0 auto 8px; width: fit-content;
+  color: var(--faint); font-size: 10.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  border: 1px solid var(--line); border-radius: var(--r-pill); padding: 6px 13px;
+}
+.rotate-hint .svg-icon svg { stroke: var(--primary-soft); }
 
 .time-chip {
   display: inline-flex; align-items: center; gap: 7px;
@@ -443,7 +435,7 @@ footer span { color: var(--gold); }
 .bust-pill { color: #ffb9c4; border-color: rgba(244, 63, 94, .34); }
 
 .hand-area {
-  padding: 15px 18px 19px;
+  padding: 10px 16px 13px;
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   background:
@@ -452,22 +444,28 @@ footer span { color: var(--gold); }
   backdrop-filter: blur(12px);
   box-shadow: var(--shadow-2);
 }
-.hand-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 13px; }
+.hand-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
 .hand-heading strong { font-size: 12px; letter-spacing: .09em; font-weight: 700; }
 .hand-heading span { color: var(--muted); font-size: 11px; margin-left: 8px; }
-.hand-cards { min-height: 138px; display: flex; gap: 10px; overflow-x: auto; padding: 16px 3px 10px; scrollbar-color: #3b3663 transparent; scrollbar-width: thin; }
+/* Cards fan out at 85% overlap: only a slim tab of each card shows, so even a
+   40-card bust hand stays inside one row with no scrolling. */
+.hand-cards { --w: 76px; min-height: 132px; display: flex; justify-content: center; padding: 15px 3px 9px; }
 .hand-card {
+  --step: calc((var(--w) + 8px) * .15);
+  position: relative;
+  width: calc(var(--w) + 8px);
   padding: 4px; border: 0; border-radius: var(--r-sm); background: none;
   cursor: pointer; touch-action: manipulation;
-  transition: transform var(--t-base) var(--ease-spring);
+  transition: transform var(--t-base) var(--ease-spring), margin-left var(--t-base);
 }
+.hand-card + .hand-card { margin-left: calc(var(--step) - var(--w) - 8px); }
 .hand-card .card { transition: filter var(--t-base), box-shadow var(--t-base); }
 .hand-card:disabled { cursor: default; }
 .hand-card:disabled .card { filter: grayscale(.62) brightness(.7); }
-/* Playable cards lift out of the hand at full colour. */
-.hand-card.is-playable { transform: translateY(-10px); }
+/* Playable cards lift out of the hand at full colour, above their neighbours. */
+.hand-card.is-playable { transform: translateY(-10px); z-index: 2; }
 .hand-card.is-playable .card { box-shadow: 0 0 0 2.5px var(--gold), 0 12px 20px rgba(4, 3, 14, .52); }
-.hand-card:hover:not(:disabled) { transform: translateY(-16px) rotate(-2deg); }
+.hand-card:hover:not(:disabled), .hand-card:focus-visible { transform: translateY(-16px) rotate(-2deg); z-index: 3; }
 .hand-card:active:not(:disabled) { transform: translateY(-7px) scale(.98); }
 /* Waiting for your turn: the whole hand sits greyed until play comes back. */
 .hand-cards.waiting .hand-card .card { filter: grayscale(.8) brightness(.6) saturate(.55); }
@@ -576,16 +574,20 @@ footer span { color: var(--gold); }
 @keyframes rise-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modal-in { from { opacity: 0; transform: scale(.94) translateY(8px); } to { opacity: 1; transform: none; } }
-.game-page > .game-toolbar, .game-page > .arena { animation: rise-in var(--t-base) var(--ease-out); }
+.game-page > .game-toolbar, .game-page > .opponents { animation: rise-in var(--t-base) var(--ease-out); }
 
 @media (prefers-reduced-motion: reduce) {
   #fx-layer, .fx-card { display: none; }
-  .hand-card.just-drawn .card, .discard-slot.landed .card, .opponent.is-turn, .menu-cards .card, .game-page > .game-toolbar, .game-page > .arena, .waiting-card { animation: none; }
+  .hand-card.just-drawn .card, .discard-slot.landed .card, .opponent.is-turn, .menu-cards .card, .game-page > .game-toolbar, .game-page > .opponents, .waiting-card { animation: none; }
   .color-ring { animation: none; transition: none; }
   * { transition-duration: 1ms !important; }
 }
 
 /* --------------------------------- Responsive --------------------------------- */
+/* One screen, no scrolling: during a game the shell caps at the viewport and
+   the footer steps out so toolbar + table + hand always fit the screen. */
+.page-shell:has(.game-page) { height: 100dvh; }
+.page-shell:has(.game-page) footer { display: none; }
 @media (max-width: 1024px) {
   .menu { grid-template-columns: 1fr; gap: 26px; padding: 40px 2% 40px; }
   .menu-copy { max-width: 560px; }
@@ -597,8 +599,8 @@ footer span { color: var(--gold); }
   .menu-cards { margin-top: 24px; height: 116px; }
   .menu-cards .card { width: 66px; }
   .mode-panel { padding: 22px; }
-  .game-page { padding-top: 16px; }
-  .arena { height: clamp(276px, 50vh, 440px); }
+  .game-page { padding-top: 12px; }
+  .opponents { min-height: 52px; }
   .opponent { min-width: 118px; padding: 5px 10px; }
   .avatar { width: 28px; height: 28px; }
   .table-center { gap: 28px; }
@@ -608,19 +610,19 @@ footer span { color: var(--gold); }
   .discard-slot .card { width: 66px; }
   .card-center { font-size: 30px; }
   .card-center .card-glyph { width: 24px; height: 24px; }
-  .hand-area { margin: 0 -2px; padding: 13px 12px; }
-  .hand-cards { min-height: 124px; }
+  .hand-area { margin: 0 -2px; padding: 8px 12px 11px; }
+  .hand-cards { --w: 66px; min-height: 118px; }
   .waiting-card { padding: 28px 22px; }
 }
 @media (max-width: 480px) {
   .page-shell { width: calc(100% - 24px); }
-  .site-header { height: 62px; }
+  .site-header { height: 54px; }
   .header-note { display: none; }
   .menu { padding-top: 30px; }
   .menu-copy { font-size: 14px; }
   .toolbar-actions .pill:not(.time-chip) { display: none; }
-  .arena { height: clamp(250px, 44vh, 340px); margin-top: 2px; }
-  .opponent { min-width: 0; padding: 4px 8px; gap: 6px; }
+  .opponents { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; min-height: 48px; margin-bottom: 8px; padding: 2px 1px 4px; scrollbar-width: thin; }
+  .opponent { flex: 0 0 auto; min-width: 0; padding: 4px 8px; gap: 6px; }
   .opponent .avatar { width: 24px; height: 24px; border-radius: 9px; font-size: 10px; }
   .opponent .player-name { max-width: 58px; font-size: 10.5px; }
   .opponent .player-count { font-size: 9px; }
@@ -638,6 +640,58 @@ footer span { color: var(--gold); }
   .card-corner.bottom { left: auto; top: auto; right: 5px; bottom: 4px; }
   .color-ring { inset: -10px -12px; border-width: 2.5px; }
   .hand-card .card { width: 62px; }
+  .hand-cards { --w: 62px; min-height: 112px; }
+  .hand-card.is-playable { transform: translateY(-8px); }
+  .hand-card:hover:not(:disabled), .hand-card:focus-visible { transform: translateY(-13px) rotate(-2deg); }
   .mobile-gap { letter-spacing: .08em; }
   footer { font-size: 8px; letter-spacing: .12em; }
+}
+/* Portrait phones: the sideways hint shows before the first turn. */
+@media (max-width: 480px) and (orientation: portrait) {
+  .rotate-hint { display: flex; }
+}
+/* Landscape phones / short screens: side view wins — header gone, table and
+   fanned hand compress so the whole game fits one screen with no scrolling. */
+@media (orientation: landscape) and (max-height: 540px) {
+  .site-header { display: none; }
+  .page-shell { width: calc(100% - 28px); }
+  .game-page { padding: 4px 0 2px; }
+  .game-toolbar { margin-bottom: 4px; }
+  .opponents { min-height: 40px; gap: 8px; margin-bottom: 4px; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; padding: 2px 1px 4px; scrollbar-width: thin; }
+  .opponent { flex: 0 0 auto; min-width: 0; padding: 3px 8px; gap: 7px; }
+  .opponent .avatar { width: 22px; height: 22px; border-radius: 8px; font-size: 9px; }
+  .opponent .player-name { max-width: 70px; font-size: 10px; }
+  .opponent .player-count { font-size: 8.5px; margin-top: 1px; }
+  .opponent .mini-back { display: none; }
+  .arena { min-height: 100px; border-radius: var(--r-lg); }
+  .arena::before { inset: 12px; }
+  .arena::after { font-size: 15px; }
+  .table-center { gap: 20px; }
+  .draw-pile, .discard-slot { width: 54px; height: 80px; }
+  .draw-pile .back-card::after { top: -8px; }
+  .card { width: 54px; border-width: 2px; border-radius: 8px; }
+  .discard-slot .card { width: 54px; }
+  .card-center { font-size: 22px; }
+  .card-center .card-glyph { width: 18px; height: 18px; }
+  .card-center.word { font-size: 11px; }
+  .card-corner { font-size: 7px; left: 4px; top: 3px; }
+  .card-corner .card-glyph { width: 7px; height: 7px; }
+  .card-corner.bottom { left: auto; top: auto; right: 4px; bottom: 3px; }
+  .color-ring { inset: -8px -10px; border-width: 2px; }
+  .pile-caption { font-size: 8px; }
+  .turn-callout { min-height: 26px; font-size: 12px; gap: 8px; }
+  .notice { min-height: 0; margin: 4px 0 0; }
+  .control-row { min-height: 0; margin: 0 0 2px; gap: 8px; }
+  .control-row .button-small { min-height: 0; padding: 5px 11px; font-size: 11px; }
+  .rotate-hint { display: none !important; }
+  .hand-area { padding: 4px 12px 6px; }
+  .hand-heading { margin-bottom: 2px; }
+  .hand-heading strong { font-size: 10px; }
+  .hand-heading span { font-size: 9px; margin-left: 6px; }
+  .hand-cards { --w: 48px; min-height: 0; padding: 6px 3px 2px; }
+  .hand-card { padding: 2px; width: calc(var(--w) + 4px); }
+  .hand-card + .hand-card { margin-left: calc((var(--w) + 4px) * -.85); }
+  .hand-card.is-playable { transform: translateY(-6px); }
+  .hand-card:hover:not(:disabled), .hand-card:focus-visible { transform: translateY(-10px) rotate(-2deg); }
+  .waiting-card { padding: 18px 16px; }
 }
