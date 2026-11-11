@@ -360,6 +360,7 @@ footer span { color: var(--gold); }
   width: 76px;
   aspect-ratio: .67;
   position: relative;
+  isolation: isolate; /* keep the centre number inside this card's own stacking context */
   flex: 0 0 auto;
   display: inline-grid;
   place-items: center;
@@ -471,8 +472,10 @@ footer span { color: var(--gold); }
 }
 .hand-card + .hand-card { margin-left: calc(var(--step) - var(--w) - 8px); }
 .hand-card:disabled { cursor: default; }
-/* Playable cards lift out of the hand at full colour, above their neighbours. */
-.hand-card.is-playable { transform: translateY(-10px); z-index: 2; }
+/* Playable cards lift out of the hand at full colour. They stay in DOM
+   stacking order so a lifted card can never paint its number over its
+   neighbour — hover separation is what exposes their faces. */
+.hand-card.is-playable { transform: translateY(-10px); }
 .hand-card.is-playable .card { box-shadow: 0 0 0 2.5px var(--gold), 0 12px 20px rgba(4, 3, 14, .52); }
 .hand-card:active:not(:disabled) { transform: translateY(-7px) scale(.98); }
 /* Waiting for your turn: the hand is clearly dimmed but the colours stay
@@ -482,11 +485,11 @@ footer span { color: var(--gold); }
    every playable number is readable. Unplayable cards keep their 85% stack. */
 .hand-cards:hover .hand-card.is-playable + .hand-card { margin-left: 0; }
 /* Corner numbers ride on every card, but in the tight stack neighbours would
-   collide with them. They show on the exposed top card and on the playable
-   cards that hover separates — never on a covered card. */
+   collide with them. At rest only the exposed top card shows them; on hover
+   the separated playable cards each show theirs. */
 .hand-cards .hand-card .card-corner { opacity: 0; transition: opacity var(--t-base); }
 .hand-cards .hand-card:last-child .card-corner,
-.hand-cards .hand-card.is-playable .card-corner { opacity: 1; }
+.hand-cards:hover .hand-card.is-playable .card-corner { opacity: 1; }
 .hand-card.just-drawn .card { animation: card-pop .55s var(--ease-spring); }
 .empty-hand { align-self: center; color: var(--faint); font-size: 12.5px; }
 
@@ -529,9 +532,9 @@ footer span { color: var(--gold); }
 .opponent.is-turn { animation: turn-glow 1.7s ease-in-out infinite; }
 
 @keyframes card-pop {
-  0% { transform: translateY(-30px) scale(1.16) rotate(-4deg); }
-  62% { transform: translateY(2px) scale(.97) rotate(2deg); }
-  100% { transform: none; }
+  0% { transform: scale(1.06); filter: brightness(1.45); }
+  62% { transform: scale(.99); }
+  100% { transform: none; filter: none; }
 }
 @keyframes card-land {
   0% { transform: perspective(800px) rotateX(24deg) rotate(6deg) scale(.88); }
