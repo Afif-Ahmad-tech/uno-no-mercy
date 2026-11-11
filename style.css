@@ -471,7 +471,6 @@ footer span { color: var(--gold); }
 }
 .hand-card + .hand-card { margin-left: calc(var(--step) - var(--w) - 8px); }
 .hand-card:disabled { cursor: default; }
-.hand-card:disabled .card { filter: grayscale(.62) brightness(.7); }
 /* Playable cards lift out of the hand at full colour, above their neighbours. */
 .hand-card.is-playable { transform: translateY(-10px); z-index: 2; }
 .hand-card.is-playable .card { box-shadow: 0 0 0 2.5px var(--gold), 0 12px 20px rgba(4, 3, 14, .52); }
@@ -479,6 +478,9 @@ footer span { color: var(--gold); }
 .hand-card:active:not(:disabled) { transform: translateY(-7px) scale(.98); }
 /* Waiting for your turn: the whole hand sits greyed until play comes back. */
 .hand-cards.waiting .hand-card .card { filter: grayscale(.8) brightness(.6) saturate(.55); }
+/* Hovering the hand fans the overlap out so every card is readable. */
+.hand-cards:hover .hand-card + .hand-card,
+.hand-cards:focus-within .hand-card + .hand-card { margin-left: calc(var(--step) * 2.5 - var(--w) - 8px); }
 .hand-card.just-drawn .card { animation: card-pop .55s var(--ease-spring); }
 .empty-hand { align-self: center; color: var(--faint); font-size: 12.5px; }
 
