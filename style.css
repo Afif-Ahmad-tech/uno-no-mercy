@@ -12,7 +12,7 @@
   --surface-glass: rgba(30, 28, 53, .78);
   --ink: #eef0ff;
   --muted: #9aa4c7;
-  --faint: #6d7699;
+  --faint: #838ca9;
   --line: rgba(167, 139, 250, .16);
   --line-strong: rgba(167, 139, 250, .3);
 
@@ -309,7 +309,7 @@ footer span { color: var(--gold); }
 }
 .table-center { position: relative; z-index: 1; display: flex; align-items: center; gap: clamp(28px, 7vw, 92px); }
 .pile-wrap { display: grid; justify-items: center; gap: 11px; }
-.pile-caption { color: rgba(255, 255, 255, .52); font-size: 9px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+.pile-caption { color: rgba(255, 255, 255, .62); font-size: 10.5px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
 .pile-caption.stack-live { color: var(--gold); text-shadow: 0 0 12px rgba(245, 196, 84, .45); }
 
 .draw-pile { width: 82px; height: 120px; padding: 0; border: 0; background: transparent; cursor: pointer; transform: rotate(-7deg); transition: transform var(--t-fast) var(--ease-spring); }
@@ -680,7 +680,7 @@ footer span { color: var(--gold); }
   .hand-card.is-playable { transform: translateY(-8px); }
   .hand-card:hover:not(:disabled), .hand-card:focus-visible { transform: translateY(-13px) rotate(-2deg); }
   .mobile-gap { letter-spacing: .08em; }
-  footer { font-size: 8px; letter-spacing: .12em; }
+  footer { font-size: 10px; letter-spacing: .12em; }
 }
 /* Portrait phones: the sideways hint shows before the first turn. */
 @media (max-width: 480px) and (orientation: portrait) {
@@ -714,7 +714,7 @@ footer span { color: var(--gold); }
   .card-corner .card-glyph { width: 7px; height: 7px; }
   .card-corner.bottom { left: auto; top: auto; right: 4px; bottom: 3px; }
   .color-ring { inset: -8px -10px; border-width: 2px; }
-  .pile-caption { font-size: 8px; }
+  .pile-caption { font-size: 10px; }
   .turn-callout { min-height: 26px; font-size: 12px; gap: 8px; }
   .notice { min-height: 0; margin: 4px 0 0; }
   .control-row { min-height: 0; margin: 0 0 2px; gap: 8px; }
