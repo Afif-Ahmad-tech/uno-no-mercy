@@ -11,6 +11,8 @@ const assets = new Map([
   ["/style.css", "style.css"],
   ["/client.mjs", "client.mjs"],
   ["/game.mjs", "game.mjs"],
+  ["/_shot.html", "_shot.html"],
+  ["/shot.mjs", "shot.mjs"],
 ]);
 const mimeTypes = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".mjs": "text/javascript; charset=utf-8" };
 

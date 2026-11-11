@@ -136,6 +136,16 @@ footer span { color: var(--gold); }
 }
 .mode-panel::before { content: ""; position: absolute; inset: 0 0 auto; height: 1px; background: linear-gradient(90deg, transparent, rgba(167, 139, 250, .65), transparent); }
 .mode-panel h2 { font-size: 18px; margin: 14px 0 18px; letter-spacing: -.01em; font-weight: 700; }
+.profile-badge {
+  position: absolute; top: 18px; right: 18px; z-index: 1;
+  width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: 1px solid rgba(167, 139, 250, .45);
+  background: linear-gradient(140deg, rgba(124, 58, 237, .35), rgba(30, 27, 75, .65));
+  color: #e6ddff; font-family: "Russo One", sans-serif; font-size: 15px;
+  transition: border-color var(--t-base), box-shadow var(--t-base), transform var(--t-base);
+}
+.profile-badge:hover { border-color: rgba(167, 139, 250, .9); box-shadow: 0 0 0 3px rgba(124, 58, 237, .18); transform: scale(1.06); }
 
 .stat-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 4px; }
 .stat-chip {
@@ -580,6 +590,7 @@ footer span { color: var(--gold); }
 .color-choice:hover { transform: scale(1.06); }
 .color-choice.red { background: var(--red); }.color-choice.yellow { background: var(--yellow); }.color-choice.green { background: var(--green); }.color-choice.blue { background: var(--blue); }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.modal form .field { margin-top: 14px; }
 .uno-check { display: flex; align-items: center; gap: 9px; padding: 12px 0 0; color: var(--gold); font-size: 12.5px; font-weight: 700; }
 .uno-check input { accent-color: #a855f7; width: 17px; height: 17px; }
 .finish-mark {

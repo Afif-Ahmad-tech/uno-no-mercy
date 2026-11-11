@@ -216,6 +216,7 @@ function renderMenu() {
       </div>
       <section class="mode-panel" aria-label="Choose a game mode">
         ${hostView || joinView ? renderSetupForm() : `
+          <button class="profile-badge" data-action="edit-name" aria-label="Change your name" title="Change your name">${escapeHtml([...(savedName() ?? "?")][0]?.toUpperCase() ?? "?")}</button>
           <div class="eyebrow">Choose your table</div>
           <h2>How do you want to play?</h2>
           <div class="stat-chips">
@@ -606,6 +607,19 @@ document.addEventListener("click", async (event) => {
     if (action === "host") { mode = "host"; notice = ""; return render(); }
     if (action === "join") { mode = "join"; notice = ""; return render(); }
     if (action === "menu") { mode = "menu"; notice = ""; inviteCode = ""; return render(); }
+    if (action === "edit-name") {
+      modalRoot.innerHTML = `
+        <div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="profile-title">
+          <h2 id="profile-title">Your name</h2>
+          <form data-form="edit-name">
+            <input class="field" name="name" maxlength="20" placeholder="Player" value="${escapeHtml(savedName() ?? "")}" required>
+            <div class="modal-actions"><button class="button button-quiet" type="button" data-action="cancel-edit">Cancel</button><button class="button button-primary" type="submit">Save</button></div>
+          </form>
+        </section></div>`;
+      modalRoot.querySelector("input")?.focus();
+      return;
+    }
+    if (action === "cancel-edit") { modalRoot.innerHTML = ""; return; }
     if (action === "exit") return leaveTable();
     if (action === "start-room") {
       const result = await request(`/api/rooms/${session.roomCode}/start`, { method: "POST", body: {}, token: session.playerToken });
@@ -665,6 +679,12 @@ app.addEventListener("submit", async (event) => {
       rememberName(name);
       const result = await request(`/api/rooms/${roomCode}/join`, { method: "POST", body: { name } });
       enterRoom(result, false);
+    } else if (form.dataset.form === "edit-name") {
+      const name = String(values.get("name") ?? "").trim();
+      if (!name) throw new Error("Enter a name.");
+      rememberName(name);
+      modalRoot.innerHTML = "";
+      return render();
     }
   } catch (error) {
     showNotice(error.message);
