@@ -595,11 +595,11 @@ footer span { color: var(--gold); }
 @keyframes rise-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modal-in { from { opacity: 0; transform: scale(.94) translateY(8px); } to { opacity: 1; transform: none; } }
-.game-page > .game-toolbar, .game-page > .opponents { animation: rise-in var(--t-base) var(--ease-out); }
+.game-page.entering > .game-toolbar, .game-page.entering > .opponents { animation: rise-in var(--t-base) var(--ease-out); }
 
 @media (prefers-reduced-motion: reduce) {
   #fx-layer, .fx-card { display: none; }
-  .hand-card.just-drawn .card, .discard-slot.landed .card, .opponent.is-turn, .opponent.just-busted, .menu-cards .card, .game-page > .game-toolbar, .game-page > .opponents, .waiting-card { animation: none; }
+  .hand-card.just-drawn .card, .discard-slot.landed .card, .opponent.is-turn, .opponent.just-busted, .menu-cards .card, .game-page.entering > .game-toolbar, .game-page.entering > .opponents, .waiting-card { animation: none; }
   .color-ring { animation: none; transition: none; }
   * { transition-duration: 1ms !important; }
 }

@@ -15,6 +15,7 @@ let selectedColor = null;
 let lastView = null;
 let lastBotId = null;
 let suppressOwnThrow = false;
+let gameEntered = false;
 
 const BOT_FIRST_GAP = 1700;
 const BOT_STEP_GAP = 800;
@@ -348,7 +349,7 @@ function renderGame(view) {
   const discardClass = topChanged ? " landed" : "";
 
   app.innerHTML = `
-    <section class="game-page">
+    <section class="game-page${gameEntered ? "" : " entering"}">
       <div class="game-toolbar">
         <div class="game-title"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span><strong>NO MERCY</strong><small>${mode === "local" ? "Solo table · 3 bots" : `Room ${escapeHtml(view.roomCode)}`}</small></span></div>
         <div class="toolbar-actions">${timeLeft}${mode === "online" ? `<span class="pill"><i class="pill-dot"></i> Room ${escapeHtml(view.roomCode)}</span>` : ""}${eliminatedCount ? `<span class="pill bust-pill">${ICONS.burst} ${eliminatedCount} bust${eliminatedCount === 1 ? "" : "s"}</span>` : ""}<button class="button button-quiet button-small" data-action="exit">Leave table</button></div>
@@ -369,7 +370,9 @@ function renderGame(view) {
       </section>
       ${notice ? `<p class="notice" role="status">${escapeHtml(notice)}</p>` : ""}
     </section>`;
-
+  // Entry animation plays once per game; later renders (countdown ticks, moves)
+  // keep the layout static instead of flashing the whole area.
+  gameEntered = true;
 }
 
 function renderWinner(view) {
@@ -393,7 +396,9 @@ function renderPlayModal() {
   const own = currentView().players.find((player) => player.id === (mode === "local" ? "you" : session.playerId));
   const isWild = isWildType(pendingCard.type);
   const colorPicker = isWild ? `<p>Choose the color that continues play.</p><div class="color-options">${COLORS.map((color) => `<button class="color-choice ${color}" data-action="choose-color" data-color="${color}" aria-label="Choose ${color}" title="${color}"></button>`).join("")}</div>` : `<p>Put this card on the discard pile?</p>`;
-  modalRoot.innerHTML = `<div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="play-title"><h2 id="play-title">Play ${escapeHtml(cardName(pendingCard))}${pendingCard.color ? ` ${escapeHtml(pendingCard.color)}` : ""}</h2>${colorPicker}${own.cardCount === 2 ? `<label class="uno-check"><input id="declare-uno" type="checkbox" checked> Say UNO with this play</label>` : ""}<div class="modal-actions"><button class="button button-quiet" data-action="cancel-play">Cancel</button><button class="button button-primary" data-action="confirm-play" ${isWild && !selectedColor ? "disabled" : ""}>Play card</button></div></section></div>`;
+  // Wilds play the moment a color is picked; only the UNO-confirm path keeps a button.
+  const confirmButton = isWild ? "" : `<button class="button button-primary" data-action="confirm-play">Play card</button>`;
+  modalRoot.innerHTML = `<div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="play-title"><h2 id="play-title">Play ${escapeHtml(cardName(pendingCard))}${pendingCard.color ? ` ${escapeHtml(pendingCard.color)}` : ""}</h2>${colorPicker}${own.cardCount === 2 ? `<label class="uno-check"><input id="declare-uno" type="checkbox" checked> Say UNO with this play</label>` : ""}<div class="modal-actions"><button class="button button-quiet" data-action="cancel-play">Cancel</button>${confirmButton}</div></section></div>`;
 }
 
 function render() {
@@ -460,6 +465,7 @@ function enterRoom(result, isHost) {
   mode = "online";
   notice = "";
   inviteCode = "";
+  gameEntered = false;
   history.replaceState(null, "", location.pathname);
   render();
   startPolling();
@@ -478,6 +484,7 @@ function startSolo() {
   ]);
   mode = "local";
   notice = "";
+  gameEntered = false;
   lastBotId = null;
   lastView = null;
   render();
@@ -613,7 +620,8 @@ document.addEventListener("click", async (event) => {
     if (action === "pick-card") return beginPlay(button.dataset.card);
     if (action === "choose-color") {
       selectedColor = button.dataset.color;
-      return renderPlayModal();
+      const declareUno = document.querySelector("#declare-uno")?.checked === true;
+      return await confirmPlay(declareUno);
     }
     if (action === "cancel-play") {
       pendingCard = null;
