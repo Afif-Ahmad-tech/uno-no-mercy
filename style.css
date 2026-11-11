@@ -270,7 +270,7 @@ footer span { color: var(--gold); }
 .out-badge { background: rgba(244, 63, 94, .16); border: 1px solid rgba(244, 63, 94, .45); color: #ffb9c4; }
 .uno-badge { background: rgba(245, 196, 84, .16); border: 1px solid rgba(245, 196, 84, .5); color: var(--gold); }
 
-/* Felt table */
+/* Wooden table — warm planks under the piles, like a kitchen-table game. */
 .arena {
   position: relative;
   min-height: clamp(170px, 21vh, 288px);
@@ -279,33 +279,35 @@ footer span { color: var(--gold); }
   place-items: center;
   border-radius: var(--r-xl);
   overflow: hidden;
-  border: 1px solid rgba(167, 139, 250, .19);
+  border: 1px solid rgba(255, 219, 168, .18);
   background:
-    radial-gradient(ellipse 78% 62% at 50% 34%, rgba(124, 58, 237, .17), transparent 62%),
-    radial-gradient(ellipse at 50% 108%, rgba(244, 63, 94, .1), transparent 52%),
-    repeating-linear-gradient(112deg, rgba(255, 255, 255, .014) 0 2px, transparent 2px 9px),
-    linear-gradient(180deg, #1d1942 0%, #161233 54%, #100d28 100%);
-  box-shadow: inset 0 0 110px rgba(6, 4, 18, .5), var(--shadow-2);
+    radial-gradient(ellipse 68% 54% at 50% 34%, rgba(255, 226, 178, .18), transparent 64%),
+    repeating-linear-gradient(93deg, rgba(26, 12, 5, .55) 0 2px, rgba(255, 236, 206, .05) 2px 3.5px, transparent 3.5px 128px),
+    repeating-linear-gradient(91deg, rgba(255, 232, 196, .045) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(88.5deg, rgba(38, 18, 6, .13) 0 1px, transparent 1px 23px),
+    linear-gradient(180deg, #7d4f2b 0%, #5f3a21 46%, #3c2212 100%);
+  box-shadow: inset 0 0 130px rgba(22, 10, 3, .72), inset 0 2px 0 rgba(255, 226, 178, .14), var(--shadow-2);
 }
 .arena::before {
   content: "";
   position: absolute; inset: 20px;
-  border: 1.5px solid rgba(167, 139, 250, .14);
+  border: 1.5px solid rgba(255, 226, 178, .16);
   border-radius: 44% 44% 40% 40% / 56% 56% 44% 44%;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 18% 22%, rgba(255, 255, 255, .05) 0 7%, transparent 30%),
-    radial-gradient(ellipse at 84% 80%, rgba(244, 63, 94, .05) 0 6%, transparent 30%);
+    radial-gradient(ellipse at 18% 22%, rgba(255, 240, 210, .07) 0 7%, transparent 30%),
+    radial-gradient(ellipse at 84% 80%, rgba(255, 196, 140, .05) 0 6%, transparent 30%);
 }
 .arena::after {
   content: "NO MERCY";
   position: absolute;
-  color: rgba(199, 172, 255, .08);
+  color: rgba(255, 240, 214, .075);
   font-family: "Russo One", "Segoe UI", sans-serif;
   font-size: clamp(20px, 3.4vw, 30px);
   letter-spacing: .4em;
   transform: rotate(-11deg);
   pointer-events: none;
+  text-shadow: 0 1px 0 rgba(20, 9, 2, .5);
 }
 .table-center { position: relative; z-index: 1; display: flex; align-items: center; gap: clamp(28px, 7vw, 92px); }
 .pile-wrap { display: grid; justify-items: center; gap: 11px; }
@@ -322,7 +324,7 @@ footer span { color: var(--gold); }
   z-index: -1;
   left: 5px;
   border-radius: 11px;
-  border: 3px solid #f4f3ec;
+  border: 4px solid #f7f4ea;
   background: repeating-linear-gradient(135deg, #263a52 0 8px, #314d6d 8px 12px);
 }
 .draw-pile .back-card::before { top: -6px; height: 100%; width: calc(100% - 10px); opacity: .82; }
@@ -355,7 +357,8 @@ footer span { color: var(--gold); }
   100% { transform: scale(1); opacity: .985; }
 }
 
-/* Cards */
+/* Cards — flat UNO-style face: thick cream edge, solid colour field and one
+   large tilted white oval carrying the symbol. */
 .card {
   width: 76px;
   aspect-ratio: .67;
@@ -364,34 +367,40 @@ footer span { color: var(--gold); }
   flex: 0 0 auto;
   display: inline-grid;
   place-items: center;
-  border: 3px solid #f6f4ec;
-  border-radius: 12px;
-  color: white;
+  border: 4px solid #f7f4ea;
+  border-radius: 11px;
+  color: #fbf9f2;
   overflow: hidden;
   background:
-    linear-gradient(168deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, 0) 34% 58%, rgba(9, 5, 26, .24) 100%),
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, .16), transparent 62%),
     var(--card-color, #273549);
-  box-shadow: 0 6px 13px rgba(4, 3, 14, .4), inset 0 0 0 1.5px rgba(255, 255, 255, .22);
+  box-shadow: 0 6px 13px rgba(4, 3, 14, .42), inset 0 0 0 1px rgba(20, 8, 4, .14);
 }
-.card.red { --card-color: #f0555c; }
-.card.red .card-center { color: #93222b; text-shadow: 0 2px 3px rgba(9, 5, 26, .18); }
-.card.yellow { --card-color: #f7b82c; color: #33260a; }
-.card.yellow .card-corner { color: #33260a; text-shadow: 1px 1.5px 1px rgba(255, 255, 255, .42); }
-.card.yellow .card-center { text-shadow: 1.5px 2px 1.5px rgba(120, 80, 8, .4); }
-.card.green { --card-color: #1fb377; }
-.card.green .card-center { color: #0d7a51; text-shadow: 0 2px 3px rgba(9, 5, 26, .18); }
-.card.blue { --card-color: #3f7ee6; }
-.card.blue .card-center { color: #1d4fae; text-shadow: 0 2px 3px rgba(9, 5, 26, .18); }
-.card::before { content: ""; position: absolute; width: 74%; height: 58%; left: 13%; top: 21%; background: linear-gradient(180deg, rgba(255, 255, 255, .99), rgba(255, 255, 255, .88)); border-radius: 50%; transform: rotate(-34deg) scaleX(.66); box-shadow: 0 3px 7px rgba(9, 5, 26, .32), inset 0 -4px 9px rgba(9, 5, 26, .13); }
+.card.red { --card-color: #e0333f; --card-ink: #a8202c; }
+.card.yellow { --card-color: #f6c40f; --card-ink: #7d4d00; }
+.card.green { --card-color: #2aa64d; --card-ink: #0c6b36; }
+.card.blue { --card-color: #1470c9; --card-ink: #14489c; }
+/* The oval: bleeds past the sides and is clipped by the card, exactly like a
+   printed UNO face. */
+.card::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 104%; height: 70%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  border-radius: 50%;
+  background: #f9f6ec;
+  box-shadow: inset 0 -6px 12px rgba(40, 22, 6, .1);
+}
 .card.wild, .card.wild4, .card.wild10, .card.wild15, .card.wild20 { --card-color: #221f41; }
 .card.wild::before, .card.wild4::before, .card.wild10::before, .card.wild15::before, .card.wild20::before {
-  background: conic-gradient(from 206deg, #f0555c 0 25%, #ffce45 25% 50%, #2bd78a 50% 75%, #4b8df8 75%);
-  box-shadow: 0 3px 7px rgba(9, 5, 26, .3);
+  background: conic-gradient(from 206deg, #e0333f 0 25%, #f6c40f 25% 50%, #2aa64d 50% 75%, #1470c9 75%);
+  box-shadow: inset 0 0 0 3px #f9f6ec;
 }
 .card .card-glyph { display: block; }
 .card-center .card-glyph { width: 27px; height: 27px; }
 .card-corner .card-glyph { width: 9px; height: 9px; }
-.card[data-card-type="draw15"], .card[data-card-type="draw20"] { border-color: #fbd7a4; }
+.card[data-card-type="draw15"], .card[data-card-type="draw20"] { border-color: #ffe6a8; }
 .card[data-card-type="draw15"], .card[data-card-type="draw20"] {
   box-shadow: 0 6px 13px rgba(4, 3, 14, .4), 0 0 18px rgba(255, 209, 92, .4);
 }
@@ -402,18 +411,28 @@ footer span { color: var(--gold); }
   font-size: 22px;
 }
 
-.card-center, .card-corner { position: relative; z-index: 1; text-shadow: 1px 2px 1px rgba(0, 0, 0, .5); font-weight: 700; font-family: "Russo One", "Segoe UI", sans-serif; }
-.card-center { font-size: 36px; line-height: 1; letter-spacing: -.06em; }
-.card-center.word { font-size: 15px; letter-spacing: -.01em; }
-.card-corner { position: absolute; font-size: 9px; left: 4px; top: 4px; }
+.card-center, .card-corner { position: relative; z-index: 1; font-weight: 700; font-family: "Russo One", "Segoe UI", sans-serif; }
+.card-center { font-size: 36px; line-height: 1; letter-spacing: -.06em; color: var(--card-ink, #fbf9f2); text-shadow: 0 2px 0 rgba(0, 0, 0, .1); }
+.card-center.word { font-size: 18px; letter-spacing: -.01em; }
+.card-corner {
+  position: absolute; font-size: 9px; left: 4px; top: 4px;
+  color: #fbf9f2;
+  text-shadow: 0 0 1.5px rgba(14, 10, 6, .95), 0 1px 1.5px rgba(14, 10, 6, .8);
+}
+/* Three-character corner labels ("ALL") need a touch less width to stay clear
+   of the next card in the stack. */
+.card-corner.wide { font-size: 8px; letter-spacing: -.02em; }
 .card-corner.bottom { left: auto; top: auto; right: 4px; bottom: 4px; transform: rotate(180deg); }
 
 .back-card {
   display: inline-grid; place-items: center;
-  border: 3px solid #f6f4ec;
-  border-radius: 12px;
-  background: repeating-linear-gradient(135deg, #263a52 0 8px, #314d6d 8px 12px);
-  box-shadow: 0 6px 13px rgba(4, 3, 14, .42), inset 0 0 0 1.5px rgba(255, 255, 255, .22);
+  border: 4px solid #f7f4ea;
+  border-radius: 11px;
+  background:
+    radial-gradient(ellipse 116% 72% at 50% 50%, #2f4a6b 0 46%, transparent 47%),
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, .14), transparent 62%),
+    repeating-linear-gradient(135deg, #22374e 0 8px, #2c4767 8px 12px);
+  box-shadow: 0 6px 13px rgba(4, 3, 14, .42), inset 0 0 0 1px rgba(20, 8, 4, .14);
   color: var(--gold);
 }
 .back-card::after { content: "N"; font-family: "Russo One", "Segoe UI", sans-serif; font-size: 38px; transform: rotate(-14deg); text-shadow: 0 0 20px rgba(245, 196, 84, .55), 1px 2.5px 0 #1c2b3e; }
@@ -673,12 +692,13 @@ footer span { color: var(--gold); }
   .arena::after { font-size: 16px; }
   .table-center { gap: 22px; }
   .draw-pile, .discard-slot { width: 60px; height: 90px; }
-  .card { width: 60px; border-width: 2px; border-radius: 9px; }
+  .card { width: 60px; border-width: 3px; border-radius: 9px; }
   .discard-slot .card { width: 60px; }
   .card-center { font-size: 26px; }
   .card-center .card-glyph { width: 21px; height: 21px; }
-  .card-center.word { font-size: 12.5px; }
+  .card-center.word { font-size: 14.5px; }
   .card-corner { font-size: 8px; left: 3px; top: 3px; }
+  .card-corner.wide { font-size: 7px; }
   .card-corner .card-glyph { width: 8px; height: 8px; }
   .card-corner.bottom { left: auto; top: auto; right: 5px; bottom: 4px; }
   .color-ring { inset: -10px -12px; border-width: 2.5px; }
@@ -711,12 +731,13 @@ footer span { color: var(--gold); }
   .table-center { gap: 20px; }
   .draw-pile, .discard-slot { width: 54px; height: 80px; }
   .draw-pile .back-card::after { top: -8px; }
-  .card { width: 54px; border-width: 2px; border-radius: 8px; }
+  .card { width: 54px; border-width: 3px; border-radius: 8px; }
   .discard-slot .card { width: 54px; }
   .card-center { font-size: 22px; }
   .card-center .card-glyph { width: 18px; height: 18px; }
-  .card-center.word { font-size: 11px; }
+  .card-center.word { font-size: 13px; }
   .card-corner { font-size: 7px; left: 2px; top: 3px; }
+  .card-corner.wide { font-size: 6.5px; }
   .card-corner .card-glyph { width: 7px; height: 7px; }
   .card-corner.bottom { left: auto; top: auto; right: 4px; bottom: 3px; }
   .color-ring { inset: -8px -10px; border-width: 2px; }
