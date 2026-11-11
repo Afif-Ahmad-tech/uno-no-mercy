@@ -35,11 +35,11 @@ function rectOf(selector) {
   return element ? element.getBoundingClientRect() : null;
 }
 
-function flyCard({ html, from, to, duration = 620, startRotate = 0, endRotate = 0, width = 72 }) {
+function flyCard({ html, from, to, duration = 620, startRotate = 0, endRotate = 0, width = 72, flip = false }) {
   if (!from || !to || prefersReducedMotion()) return Promise.resolve();
   const layer = ensureFxLayer();
   const el = document.createElement("span");
-  el.className = "fx-card";
+  el.className = `fx-card${flip ? " is-flip" : ""}`;
   el.innerHTML = html;
   el.style.left = `${Math.round(from.left + from.width / 2 - width / 2)}px`;
   el.style.top = `${Math.round(from.top + from.height / 2 - width * 0.72)}px`;
@@ -112,6 +112,7 @@ function animateThrowFromDiff(view, viewerId) {
       duration: 620,
       startRotate: -12,
       endRotate: 6,
+      flip: true,
     });
   }
   return true;
@@ -272,13 +273,13 @@ function renderLobby(view) {
     </section>`;
 }
 
-function renderOpponent(player, view, viewerId) {
+function renderOpponent(player, view, viewerId, justBusted = false) {
   const bot = mode === "local";
   const initial = [...player.name][0]?.toUpperCase() ?? "?";
   const backs = player.eliminated ? "" : Array.from({ length: Math.min(player.cardCount, 6) }, () => `<i class="mini-back"></i>`).join("");
   const badge = player.eliminated ? `<span class="out-badge">BUST</span>` : player.unoCalled ? `<span class="uno-badge">UNO</span>` : "";
   const isTurn = player.id === view.currentPlayerId && view.status === "playing" && !player.eliminated;
-  return `<div class="opponent${isTurn ? " is-turn" : ""}${player.eliminated ? " is-out" : ""}" data-player-id="${escapeHtml(player.id)}">
+  return `<div class="opponent${isTurn ? " is-turn" : ""}${player.eliminated ? " is-out" : ""}${justBusted ? " just-busted" : ""}" data-player-id="${escapeHtml(player.id)}">
     <span class="avatar ${bot ? "bot" : "friend"}" aria-hidden="true">${escapeHtml(initial)}</span>
     <span><span class="player-name">${escapeHtml(player.name)}</span><span class="player-count">${player.eliminated ? "out at 40" : `${player.cardCount} cards`}</span></span>
     <span class="mini-hand" aria-hidden="true">${badge}${backs}</span>
@@ -310,6 +311,8 @@ function renderGame(view) {
   const prevOwn = lastView?.players?.find?.((entry) => entry.id === viewerId) ?? null;
   const prevOwnIds = new Set(prevOwn?.hand?.map((entry) => entry.id) ?? []);
   const justDrawnIds = cards.filter((card) => !prevOwnIds.has(card.id)).map((card) => card.id);
+  // One-shot bust feedback: only players eliminated since the last render shake.
+  const prevBusted = new Set(lastView?.players?.filter?.((entry) => entry.eliminated).map((entry) => entry.id) ?? []);
   const stackPending = (view.stackAmount ?? 0) > 0;
   const stackButton = stackPending && yourTurn
     ? `<button class="button button-danger button-small" data-action="pay-stack">Take stack (+${view.stackAmount})</button>`
@@ -350,7 +353,7 @@ function renderGame(view) {
         <div class="game-title"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span><strong>NO MERCY</strong><small>${mode === "local" ? "Solo table · 3 bots" : `Room ${escapeHtml(view.roomCode)}`}</small></span></div>
         <div class="toolbar-actions">${timeLeft}${mode === "online" ? `<span class="pill"><i class="pill-dot"></i> Room ${escapeHtml(view.roomCode)}</span>` : ""}${eliminatedCount ? `<span class="pill bust-pill">${ICONS.burst} ${eliminatedCount} bust${eliminatedCount === 1 ? "" : "s"}</span>` : ""}<button class="button button-quiet button-small" data-action="exit">Leave table</button></div>
       </div>
-      <div class="opponents">${opponents.map((player) => renderOpponent(player, view, viewerId)).join("")}</div>
+      <div class="opponents">${opponents.map((player) => renderOpponent(player, view, viewerId, player.eliminated && !prevBusted.has(player.id))).join("")}</div>
       <section class="arena" aria-label="Game table">
         <div class="table-center">
           <div class="pile-wrap"><button class="draw-pile" data-action="draw" aria-label="Draw a card" ${!yourTurn || view.drawnCardId || stackPending ? "disabled" : ""}><span class="back-card"></span></button><span class="pile-caption">Draw · ${view.drawCount}</span></div>

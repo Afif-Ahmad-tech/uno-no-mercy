@@ -459,7 +459,6 @@ footer span { color: var(--gold); }
   transition: transform var(--t-base) var(--ease-spring), margin-left var(--t-base);
 }
 .hand-card + .hand-card { margin-left: calc(var(--step) - var(--w) - 8px); }
-.hand-card .card { transition: filter var(--t-base), box-shadow var(--t-base); }
 .hand-card:disabled { cursor: default; }
 .hand-card:disabled .card { filter: grayscale(.62) brightness(.7); }
 /* Playable cards lift out of the hand at full colour, above their neighbours. */
@@ -472,6 +471,21 @@ footer span { color: var(--gold); }
 .hand-card.just-drawn .card { animation: card-pop .55s var(--ease-spring); }
 .empty-hand { align-self: center; color: var(--faint); font-size: 12.5px; }
 
+/* Feedback micro-motion: hover tilt, pile press, and the bust hit. */
+.hand-card .card { transition: transform var(--t-base) var(--ease-spring), filter var(--t-base), box-shadow var(--t-base); }
+@media (prefers-reduced-motion: no-preference) {
+  .hand-card:not(:disabled):hover .card { transform: perspective(700px) rotateX(-9deg) rotateY(5deg) translateY(-2px); }
+}
+.draw-pile:active:not(:disabled) { transform: rotate(-7deg) translateY(3px) scale(.95); }
+.opponent.just-busted { animation: bust-hit .85s var(--ease-out); }
+@keyframes bust-hit {
+  0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, .55); }
+  20% { transform: translateY(3px) rotate(-2deg); }
+  42% { transform: translateY(-2px) rotate(1.5deg); }
+  70% { transform: none; box-shadow: 0 0 22px 5px rgba(244, 63, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+}
+
 /* FX */
 #fx-layer { position: fixed; inset: 0; z-index: var(--z-fx); pointer-events: none; }
 .fx-card {
@@ -482,10 +496,17 @@ footer span { color: var(--gold); }
 }
 .fx-card .card, .fx-card .back-card { width: 100%; height: 100%; margin: 0; }
 .fx-card .back-card { box-shadow: none; }
+/* Cards fly with real depth: they pop toward the viewer, flip face-up mid-flight
+   when a play is thrown, and drop flat onto the discard. */
 .fx-card > .card, .fx-card > .back-card { animation: fx-tumble var(--fx-d, 620ms) cubic-bezier(.3, 1.16, .5, 1) both; }
 @keyframes fx-tumble {
-  from { transform: rotate(var(--r0, 0deg)) scale(1.12); }
-  to { transform: rotate(var(--r1, 0deg)) scale(1); }
+  from { transform: perspective(900px) translateZ(64px) rotate(var(--r0, 0deg)) scale(1.12); }
+  to { transform: perspective(900px) rotate(var(--r1, 0deg)) scale(1); }
+}
+.fx-card.is-flip > .card { animation: fx-flip var(--fx-d, 620ms) cubic-bezier(.3, 1.16, .5, 1) both; }
+@keyframes fx-flip {
+  from { transform: perspective(900px) translateZ(72px) rotateY(104deg) rotate(var(--r0, 0deg)) scale(1.14); }
+  to { transform: perspective(900px) rotateY(0deg) rotate(var(--r1, 0deg)) scale(1); }
 }
 .discard-slot .card { transition: none; }
 .discard-slot.landed .card { animation: card-land .52s var(--ease-spring); }
@@ -497,8 +518,8 @@ footer span { color: var(--gold); }
   100% { transform: none; }
 }
 @keyframes card-land {
-  0% { transform: rotate(6deg) scale(.9); }
-  55% { transform: rotate(6deg) scale(1.1); }
+  0% { transform: perspective(800px) rotateX(24deg) rotate(6deg) scale(.88); }
+  55% { transform: perspective(800px) rotateX(-7deg) rotate(6deg) scale(1.1); }
   76% { transform: rotate(6deg) scale(.965); }
   100% { transform: rotate(6deg) scale(1); }
 }
@@ -578,7 +599,7 @@ footer span { color: var(--gold); }
 
 @media (prefers-reduced-motion: reduce) {
   #fx-layer, .fx-card { display: none; }
-  .hand-card.just-drawn .card, .discard-slot.landed .card, .opponent.is-turn, .menu-cards .card, .game-page > .game-toolbar, .game-page > .opponents, .waiting-card { animation: none; }
+  .hand-card.just-drawn .card, .discard-slot.landed .card, .opponent.is-turn, .opponent.just-busted, .menu-cards .card, .game-page > .game-toolbar, .game-page > .opponents, .waiting-card { animation: none; }
   .color-ring { animation: none; transition: none; }
   * { transition-duration: 1ms !important; }
 }
