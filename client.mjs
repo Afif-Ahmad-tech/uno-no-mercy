@@ -383,7 +383,7 @@ function renderGame(view) {
       <div class="control-row">${stackButton}${drawButton}${canCall ? `<button class="button button-primary button-small" data-action="call-uno">Say UNO</button>` : ""}${canCatch ? `<button class="button button-danger button-small" data-action="catch-uno">Call out missed UNO</button>` : ""}${view.status === "finished" ? `<button class="button button-primary button-small" data-action="exit">Play again</button>` : ""}</div>
       <section class="hand-area" aria-label="Your hand">
         <div class="hand-heading"><div><strong>YOUR HAND</strong><span>${own.cardCount} ${own.cardCount === 1 ? "card" : "cards"}${own.cardCount >= 35 && !own.eliminated ? " · bust at 40!" : ""}</span></div>${own.cardCount === 1 ? `<span>${called ? "UNO called" : "Call UNO before your last card"}</span>` : ""}</div>
-        <div class="hand-cards${yourTurn ? "" : " waiting"}">${handCards}</div>
+        <div class="hand-cards${yourTurn ? "" : " waiting"}" style="--n: ${Math.max(cards.length, 1)}">${handCards}</div>
       </section>
       ${notice ? `<p class="notice" role="status">${escapeHtml(notice)}</p>` : ""}
     </section>`;

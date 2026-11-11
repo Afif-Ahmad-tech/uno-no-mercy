@@ -405,8 +405,8 @@ footer span { color: var(--gold); }
 .card-center, .card-corner { position: relative; z-index: 1; text-shadow: 1px 2px 1px rgba(0, 0, 0, .5); font-weight: 700; font-family: "Russo One", "Segoe UI", sans-serif; }
 .card-center { font-size: 36px; line-height: 1; letter-spacing: -.06em; }
 .card-center.word { font-size: 15px; letter-spacing: -.01em; }
-.card-corner { position: absolute; font-size: 10px; left: 6px; top: 5px; }
-.card-corner.bottom { left: auto; top: auto; right: 6px; bottom: 5px; transform: rotate(180deg); }
+.card-corner { position: absolute; font-size: 9px; left: 4px; top: 4px; }
+.card-corner.bottom { left: auto; top: auto; right: 4px; bottom: 4px; transform: rotate(180deg); }
 
 .back-card {
   display: inline-grid; place-items: center;
@@ -463,14 +463,18 @@ footer span { color: var(--gold); }
    40-card bust hand stays inside one row with no scrolling. */
 .hand-cards { --w: 76px; min-height: 132px; display: flex; justify-content: center; padding: 15px 3px 9px; }
 .hand-card {
-  --step: calc((var(--w) + 8px) * .15);
+  /* Each card exposes 30% of its width so its corner number is readable, but
+     never more than the panel can hold: big hands tighten instead of spilling
+     off the screen. */
+  --cw: calc(var(--w) + 8px);
+  --step: min(calc(var(--cw) * var(--spread, .3)), calc((100% - var(--cw)) / (var(--n, 8) - 1)));
   position: relative;
-  width: calc(var(--w) + 8px);
+  width: var(--cw);
   padding: 4px; border: 0; border-radius: var(--r-sm); background: none;
   cursor: pointer; touch-action: manipulation;
   transition: transform var(--t-base) var(--ease-spring), margin-left var(--t-base);
 }
-.hand-card + .hand-card { margin-left: calc(var(--step) - var(--w) - 8px); }
+.hand-card + .hand-card { margin-left: calc(var(--step) - var(--cw)); }
 .hand-card:disabled { cursor: default; }
 /* Playable cards lift out of the hand at full colour. They stay in DOM
    stacking order so a lifted card can never paint its number over its
@@ -484,12 +488,8 @@ footer span { color: var(--gold); }
 /* Hovering the hand slides the card that follows a playable one clear, so
    every playable number is readable. Unplayable cards keep their 85% stack. */
 .hand-cards:hover .hand-card.is-playable + .hand-card { margin-left: 0; }
-/* Corner numbers ride on every card, but in the tight stack neighbours would
-   collide with them. At rest only the exposed top card shows them; on hover
-   the separated playable cards each show theirs. */
-.hand-cards .hand-card .card-corner { opacity: 0; transition: opacity var(--t-base); }
-.hand-cards .hand-card:last-child .card-corner,
-.hand-cards:hover .hand-card.is-playable .card-corner { opacity: 1; }
+/* Corner numbers ride on every card and fit inside each card's exposed
+   sliver, so the whole stack reads without anything colliding. */
 .hand-card.just-drawn .card { animation: card-pop .55s var(--ease-spring); }
 .empty-hand { align-self: center; color: var(--faint); font-size: 12.5px; }
 
@@ -678,7 +678,7 @@ footer span { color: var(--gold); }
   .card-center { font-size: 26px; }
   .card-center .card-glyph { width: 21px; height: 21px; }
   .card-center.word { font-size: 12.5px; }
-  .card-corner { font-size: 8px; left: 5px; top: 4px; }
+  .card-corner { font-size: 8px; left: 3px; top: 3px; }
   .card-corner .card-glyph { width: 8px; height: 8px; }
   .card-corner.bottom { left: auto; top: auto; right: 5px; bottom: 4px; }
   .color-ring { inset: -10px -12px; border-width: 2.5px; }
@@ -716,7 +716,7 @@ footer span { color: var(--gold); }
   .card-center { font-size: 22px; }
   .card-center .card-glyph { width: 18px; height: 18px; }
   .card-center.word { font-size: 11px; }
-  .card-corner { font-size: 7px; left: 4px; top: 3px; }
+  .card-corner { font-size: 7px; left: 2px; top: 3px; }
   .card-corner .card-glyph { width: 7px; height: 7px; }
   .card-corner.bottom { left: auto; top: auto; right: 4px; bottom: 3px; }
   .color-ring { inset: -8px -10px; border-width: 2px; }
@@ -731,8 +731,7 @@ footer span { color: var(--gold); }
   .hand-heading strong { font-size: 10px; }
   .hand-heading span { font-size: 9px; margin-left: 6px; }
   .hand-cards { --w: 48px; min-height: 0; padding: 6px 3px 2px; }
-  .hand-card { padding: 2px; width: calc(var(--w) + 4px); }
-  .hand-card + .hand-card { margin-left: calc((var(--w) + 4px) * -.85); }
+  .hand-card { --cw: calc(var(--w) + 4px); --spread: .4; padding: 2px; }
   .hand-card.is-playable { transform: translateY(-6px); }
   .waiting-card { padding: 18px 16px; }
 }
