@@ -155,7 +155,7 @@ function drawMany(state, player, count) {
 
 function checkEliminations(state) {
   for (const player of state.players) {
-    if (player.eliminated !== true && player.hand.length > ELIMINATION_LIMIT) {
+    if (player.eliminated !== true && player.hand.length >= ELIMINATION_LIMIT) {
       player.eliminated = true;
       // A busted hand returns to the bottom of the discard pile so the
       // deck keeps circulating; the retained top card stays on top.

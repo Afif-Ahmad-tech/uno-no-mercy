@@ -209,7 +209,7 @@ function renderMenu() {
           <div class="stat-chips">
             <span class="stat-chip">${ICONS.deck}<strong>150</strong>-card deck</span>
             <span class="stat-chip">${ICONS.bolt}+10 · +15 · +20</span>
-            <span class="stat-chip">${ICONS.burst}bust at 41</span>
+            <span class="stat-chip">${ICONS.burst}bust at 40</span>
             <span class="stat-chip">${ICONS.bots}<strong>2–8</strong> players</span>
           </div>
           <div class="button-stack">
@@ -271,15 +271,21 @@ function renderLobby(view) {
     </section>`;
 }
 
-function renderOpponent(player, view, viewerId) {
+function renderOpponent(player, view, viewerId, seatIndex, seatCount) {
   const bot = mode === "local";
   const initial = [...player.name][0]?.toUpperCase() ?? "?";
-  const backs = player.eliminated ? "" : Array.from({ length: Math.min(player.cardCount, 6) }, () => `<i class="mini-back"></i>`).join("");
+  const isSelf = player.id === viewerId;
+  const backs = player.eliminated || isSelf ? "" : Array.from({ length: Math.min(player.cardCount, 6) }, () => `<i class="mini-back"></i>`).join("");
   const badge = player.eliminated ? `<span class="out-badge">BUST</span>` : player.unoCalled ? `<span class="uno-badge">UNO</span>` : "";
   const isTurn = player.id === view.currentPlayerId && view.status === "playing" && !player.eliminated;
-  return `<div class="opponent${isTurn ? " is-turn" : ""}${player.eliminated ? " is-out" : ""}" data-player-id="${escapeHtml(player.id)}">
-    <span class="avatar ${bot ? "bot" : "friend"}" aria-hidden="true">${escapeHtml(initial)}</span>
-    <span><span class="player-name">${escapeHtml(player.name)}${player.id === viewerId ? " (you)" : ""}</span><span class="player-count">${player.eliminated ? "out at 40+ cards" : `${player.cardCount} cards`}</span></span>
+  // Equal spacing around the round table: the viewer always sits at the
+  // bottom, everyone else follows at even angles.
+  const angle = Math.PI / 2 + (seatIndex * 2 * Math.PI) / seatCount;
+  const x = (50 + 39.5 * Math.cos(angle)).toFixed(2);
+  const y = (50 + 39.5 * Math.sin(angle)).toFixed(2);
+  return `<div class="opponent${isSelf ? " is-self" : ""}${isTurn ? " is-turn" : ""}${player.eliminated ? " is-out" : ""}" style="--seat-x: ${x}%; --seat-y: ${y}%" data-player-id="${escapeHtml(player.id)}">
+    <span class="avatar ${isSelf ? "you" : bot ? "bot" : "friend"}" aria-hidden="true">${escapeHtml(initial)}</span>
+    <span class="seat-copy"><span class="player-name">${escapeHtml(isSelf ? "You" : player.name)}</span><span class="player-count">${player.eliminated ? "out at 40" : `${player.cardCount} cards`}</span></span>
     <span class="mini-hand" aria-hidden="true">${badge}${backs}</span>
   </div>`;
 }
@@ -300,6 +306,8 @@ function renderGame(view) {
     return renderMenu();
   }
   const opponents = view.players.filter((player) => player.id !== viewerId);
+  const viewerIndex = Math.max(0, view.players.findIndex((player) => player.id === viewerId));
+  const seatOrder = [...view.players.slice(viewerIndex), ...view.players.slice(0, viewerIndex)];
   const yourTurn = view.currentPlayerId === viewerId && view.status === "playing" && !own.eliminated;
   const winner = view.players.find((player) => player.id === view.winnerId);
   const called = own.unoCalled === true;
@@ -322,7 +330,7 @@ function renderGame(view) {
   const turnMessage = winner
     ? "The table has a winner."
     : own.eliminated
-      ? "You busted out at 40+ cards — watching the rest play out."
+      ? "You busted out at 40 cards — watching the rest play out."
       : yourTurn
         ? (stackPending
           ? `A +${view.stackAmount} stack is open — stack an equal-or-bigger +card or take the pile.`
@@ -349,8 +357,8 @@ function renderGame(view) {
         <div class="game-title"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span><strong>NO MERCY</strong><small>${mode === "local" ? "Solo table · 3 bots" : `Room ${escapeHtml(view.roomCode)}`}</small></span></div>
         <div class="toolbar-actions">${timeLeft}${mode === "online" ? `<span class="pill"><i class="pill-dot"></i> Room ${escapeHtml(view.roomCode)}</span>` : ""}${eliminatedCount ? `<span class="pill bust-pill">${ICONS.burst} ${eliminatedCount} bust${eliminatedCount === 1 ? "" : "s"}</span>` : ""}<button class="button button-quiet button-small" data-action="exit">Leave table</button></div>
       </div>
-      <div class="opponents">${opponents.map((player) => renderOpponent(player, view, viewerId)).join("")}</div>
-      <section class="arena" aria-label="Game table">
+      <section class="arena seats-${view.players.length}" aria-label="Game table">
+        ${seatOrder.map((player, index) => renderOpponent(player, view, viewerId, index, seatOrder.length)).join("")}
         <div class="table-center">
           <div class="pile-wrap"><button class="draw-pile" data-action="draw" aria-label="Draw a card" ${!yourTurn || view.drawnCardId || stackPending ? "disabled" : ""}><span class="back-card"></span></button><span class="pile-caption">Draw · ${view.drawCount}</span></div>
           <div class="pile-wrap"><div class="discard-slot${discardClass}"><span class="color-ring" data-color="${activeColorClass}" aria-hidden="true"></span>${view.topCard ? cardMarkup(view.topCard) : ""}</div><span class="pile-caption${stackPending ? " stack-live" : ""}">${stackPending ? `Stack +${view.stackAmount}` : "Played card"}</span></div>
@@ -359,8 +367,8 @@ function renderGame(view) {
       <div class="turn-callout"><i class="turn-indicator"></i><span>${turnMessage}</span><span class="active-color"><i class="active-swatch ${activeColorClass}"></i>${activeColorClass} · ${view.direction === 1 ? "clockwise" : "counterclockwise"}</span></div>
       <div class="control-row">${stackButton}${drawButton}${canCall ? `<button class="button button-primary button-small" data-action="call-uno">Say UNO</button>` : ""}${canCatch ? `<button class="button button-danger button-small" data-action="catch-uno">Call out missed UNO</button>` : ""}${view.status === "finished" ? `<button class="button button-primary button-small" data-action="exit">Play again</button>` : ""}</div>
       <section class="hand-area" aria-label="Your hand">
-        <div class="hand-heading"><div><strong>YOUR HAND</strong><span>${own.cardCount} ${own.cardCount === 1 ? "card" : "cards"}${own.cardCount >= 35 && !own.eliminated ? " · bust at 41!" : ""}</span></div>${own.cardCount === 1 ? `<span>${called ? "UNO called" : "Call UNO before your last card"}</span>` : ""}</div>
-        <div class="hand-cards">${handCards}</div>
+        <div class="hand-heading"><div><strong>YOUR HAND</strong><span>${own.cardCount} ${own.cardCount === 1 ? "card" : "cards"}${own.cardCount >= 35 && !own.eliminated ? " · bust at 40!" : ""}</span></div>${own.cardCount === 1 ? `<span>${called ? "UNO called" : "Call UNO before your last card"}</span>` : ""}</div>
+        <div class="hand-cards${yourTurn ? "" : " waiting"}">${handCards}</div>
       </section>
       ${notice ? `<p class="notice" role="status">${escapeHtml(notice)}</p>` : ""}
     </section>`;
@@ -373,7 +381,7 @@ function renderWinner(view) {
   const reason = view.winReason === "timeout"
     ? "Time expired — fewest cards takes the table."
     : view.winReason === "last-standing"
-      ? "Every rival burst past 40 cards. Last one standing."
+      ? "Every rival hit 40 cards. Last one standing."
       : "That’s the final card. Nice playing.";
   modalRoot.innerHTML = `<div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="winner-title"><div class="finish-mark">${ICONS.trophy}</div><h2 id="winner-title">${escapeHtml(winner.name)} wins!</h2><p>${reason}</p><div class="modal-actions"><button class="button button-primary" data-action="exit">${ICONS.replay}<span>Play again</span></button></div></section></div>`;
 

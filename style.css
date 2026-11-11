@@ -225,19 +225,33 @@ footer span { color: var(--gold); }
 }
 .pill-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; box-shadow: 0 0 9px var(--green); }
 
-.opponents { display: flex; flex-wrap: wrap; justify-content: center; gap: 11px; margin: 0 auto 14px; min-height: 58px; }
+/* Round-table seats: evenly placed on the felt rim, viewer at the bottom. */
 .opponent {
-  display: flex; align-items: center; gap: 10px;
+  position: absolute;
+  left: var(--seat-x, 50%);
+  top: var(--seat-y, 50%);
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  display: flex; align-items: center; gap: 9px;
   background: var(--surface-glass);
   border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  padding: 8px 12px;
-  min-width: 158px;
+  border-radius: var(--r-pill);
+  padding: 6px 12px;
+  min-width: 136px; max-width: 178px;
   backdrop-filter: blur(10px);
   transition: border-color var(--t-base), box-shadow var(--t-base);
 }
 .opponent.is-turn { border-color: rgba(245, 196, 84, .65); box-shadow: 0 0 0 2px rgba(245, 196, 84, .09); }
+.opponent.is-self { border-color: rgba(167, 139, 250, .45); box-shadow: 0 0 0 2px rgba(124, 58, 237, .13); }
 .opponent.is-out { opacity: .58; filter: saturate(.5); }
+.seat-copy { display: grid; gap: 2px; justify-items: start; min-width: 0; }
+.avatar.you { background: linear-gradient(140deg, #b39af5, #7c3aed); color: #f3efff; }
+/* Larger tables get denser seats so every chair still fits the rim. */
+.seats-7 .opponent, .seats-8 .opponent { min-width: 104px; padding: 5px 9px; gap: 7px; }
+.seats-7 .avatar, .seats-8 .avatar { width: 26px; height: 26px; border-radius: 9px; }
+.seats-7 .player-name, .seats-8 .player-name { max-width: 62px; font-size: 11px; }
+.seats-7 .player-count, .seats-8 .player-count { font-size: 9.5px; }
+.seats-7 .mini-back, .seats-8 .mini-back { display: none; }
 .avatar {
   width: 32px; height: 32px; border-radius: 12px;
   display: grid; place-items: center;
@@ -259,44 +273,45 @@ footer span { color: var(--gold); }
 .out-badge { background: rgba(244, 63, 94, .16); border: 1px solid rgba(244, 63, 94, .45); color: #ffb9c4; }
 .uno-badge { background: rgba(245, 196, 84, .16); border: 1px solid rgba(245, 196, 84, .5); color: var(--gold); }
 
-/* Felt table */
+/* Round felt table with seats around the rim */
 .arena {
   position: relative;
-  min-height: 288px;
-  flex: 1;
+  height: clamp(300px, 52vh, 560px);
+  aspect-ratio: 1;
+  flex-shrink: 0;
+  align-self: center;
+  margin: 4px auto 16px;
   display: grid;
   place-items: center;
-  border-radius: var(--r-xl);
-  overflow: hidden;
-  border: 1px solid rgba(167, 139, 250, .19);
-  background:
-    radial-gradient(ellipse 78% 62% at 50% 34%, rgba(124, 58, 237, .17), transparent 62%),
-    radial-gradient(ellipse at 50% 108%, rgba(244, 63, 94, .1), transparent 52%),
-    repeating-linear-gradient(112deg, rgba(255, 255, 255, .014) 0 2px, transparent 2px 9px),
-    linear-gradient(180deg, #1d1942 0%, #161233 54%, #100d28 100%);
-  box-shadow: inset 0 0 110px rgba(6, 4, 18, .5), var(--shadow-2);
 }
 .arena::before {
   content: "";
-  position: absolute; inset: 20px;
-  border: 1.5px solid rgba(167, 139, 250, .14);
-  border-radius: 44% 44% 40% 40% / 56% 56% 44% 44%;
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(167, 139, 250, .19);
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 18% 22%, rgba(255, 255, 255, .05) 0 7%, transparent 30%),
-    radial-gradient(ellipse at 84% 80%, rgba(244, 63, 94, .05) 0 6%, transparent 30%);
+    radial-gradient(ellipse 78% 62% at 50% 40%, rgba(124, 58, 237, .17), transparent 62%),
+    radial-gradient(ellipse at 50% 104%, rgba(244, 63, 94, .1), transparent 52%),
+    radial-gradient(ellipse at 22% 26%, rgba(255, 255, 255, .05) 0 7%, transparent 30%),
+    repeating-linear-gradient(112deg, rgba(255, 255, 255, .014) 0 2px, transparent 2px 9px),
+    linear-gradient(180deg, #1d1942 0%, #161233 54%, #100d28 100%);
+  box-shadow: inset 0 0 96px rgba(6, 4, 18, .5), var(--shadow-2);
 }
 .arena::after {
   content: "NO MERCY";
   position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-11deg);
   color: rgba(199, 172, 255, .08);
   font-family: "Russo One", "Segoe UI", sans-serif;
-  font-size: clamp(20px, 3.4vw, 30px);
+  font-size: clamp(18px, 3vw, 28px);
   letter-spacing: .4em;
-  transform: rotate(-11deg);
   pointer-events: none;
 }
-.table-center { position: relative; z-index: 1; display: flex; align-items: center; gap: clamp(28px, 7vw, 92px); }
+.table-center { position: relative; z-index: 1; display: flex; align-items: center; gap: clamp(20px, 4vw, 60px); }
 .pile-wrap { display: grid; justify-items: center; gap: 11px; }
 .pile-caption { color: rgba(255, 255, 255, .52); font-size: 9px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
 .pile-caption.stack-live { color: var(--gold); text-shadow: 0 0 12px rgba(245, 196, 84, .45); }
@@ -440,16 +455,22 @@ footer span { color: var(--gold); }
 .hand-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 13px; }
 .hand-heading strong { font-size: 12px; letter-spacing: .09em; font-weight: 700; }
 .hand-heading span { color: var(--muted); font-size: 11px; margin-left: 8px; }
-.hand-cards { min-height: 126px; display: flex; gap: 10px; overflow-x: auto; padding: 4px 3px 10px; scrollbar-color: #3b3663 transparent; scrollbar-width: thin; }
+.hand-cards { min-height: 138px; display: flex; gap: 10px; overflow-x: auto; padding: 16px 3px 10px; scrollbar-color: #3b3663 transparent; scrollbar-width: thin; }
 .hand-card {
   padding: 4px; border: 0; border-radius: var(--r-sm); background: none;
   cursor: pointer; touch-action: manipulation;
-  transition: transform var(--t-fast) var(--ease-spring), filter var(--t-fast);
+  transition: transform var(--t-base) var(--ease-spring);
 }
-.hand-card:hover:not(:disabled) { transform: translateY(-9px) rotate(-2deg); }
-.hand-card:active:not(:disabled) { transform: translateY(-3px) scale(.98); }
-.hand-card:disabled { cursor: default; filter: saturate(.62) brightness(.72); }
-.hand-card.is-playable .card { box-shadow: 0 0 0 2.5px var(--gold), 0 7px 16px rgba(4, 3, 14, .42); }
+.hand-card .card { transition: filter var(--t-base), box-shadow var(--t-base); }
+.hand-card:disabled { cursor: default; }
+.hand-card:disabled .card { filter: grayscale(.62) brightness(.7); }
+/* Playable cards lift out of the hand at full colour. */
+.hand-card.is-playable { transform: translateY(-10px); }
+.hand-card.is-playable .card { box-shadow: 0 0 0 2.5px var(--gold), 0 12px 20px rgba(4, 3, 14, .52); }
+.hand-card:hover:not(:disabled) { transform: translateY(-16px) rotate(-2deg); }
+.hand-card:active:not(:disabled) { transform: translateY(-7px) scale(.98); }
+/* Waiting for your turn: the whole hand sits greyed until play comes back. */
+.hand-cards.waiting .hand-card .card { filter: grayscale(.8) brightness(.6) saturate(.55); }
 .hand-card.just-drawn .card { animation: card-pop .55s var(--ease-spring); }
 .empty-hand { align-self: center; color: var(--faint); font-size: 12.5px; }
 
@@ -555,11 +576,11 @@ footer span { color: var(--gold); }
 @keyframes rise-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modal-in { from { opacity: 0; transform: scale(.94) translateY(8px); } to { opacity: 1; transform: none; } }
-.game-page > .game-toolbar, .game-page > .opponents { animation: rise-in var(--t-base) var(--ease-out); }
+.game-page > .game-toolbar, .game-page > .arena { animation: rise-in var(--t-base) var(--ease-out); }
 
 @media (prefers-reduced-motion: reduce) {
   #fx-layer, .fx-card { display: none; }
-  .hand-card.just-drawn .card, .discard-slot.landed .card, .opponent.is-turn, .menu-cards .card, .game-page > .game-toolbar, .game-page > .opponents, .waiting-card { animation: none; }
+  .hand-card.just-drawn .card, .discard-slot.landed .card, .opponent.is-turn, .menu-cards .card, .game-page > .game-toolbar, .game-page > .arena, .waiting-card { animation: none; }
   .color-ring { animation: none; transition: none; }
   * { transition-duration: 1ms !important; }
 }
@@ -577,8 +598,9 @@ footer span { color: var(--gold); }
   .menu-cards .card { width: 66px; }
   .mode-panel { padding: 22px; }
   .game-page { padding-top: 16px; }
-  .arena { min-height: 240px; }
-  .arena::before { inset: 14px; }
+  .arena { height: clamp(276px, 50vh, 440px); }
+  .opponent { min-width: 118px; padding: 5px 10px; }
+  .avatar { width: 28px; height: 28px; }
   .table-center { gap: 28px; }
   .draw-pile, .discard-slot { width: 68px; height: 101px; }
   .draw-pile .back-card::after { top: -9px; }
@@ -587,7 +609,7 @@ footer span { color: var(--gold); }
   .card-center { font-size: 30px; }
   .card-center .card-glyph { width: 24px; height: 24px; }
   .hand-area { margin: 0 -2px; padding: 13px 12px; }
-  .hand-cards { min-height: 112px; }
+  .hand-cards { min-height: 124px; }
   .waiting-card { padding: 28px 22px; }
 }
 @media (max-width: 480px) {
@@ -597,9 +619,12 @@ footer span { color: var(--gold); }
   .menu { padding-top: 30px; }
   .menu-copy { font-size: 14px; }
   .toolbar-actions .pill:not(.time-chip) { display: none; }
-  .opponents { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding: 2px 1px 6px; scrollbar-width: thin; }
-  .opponent { flex: 0 0 auto; min-width: 142px; }
-  .arena { min-height: 222px; border-radius: var(--r-lg); }
+  .arena { height: clamp(250px, 44vh, 340px); margin-top: 2px; }
+  .opponent { min-width: 0; padding: 4px 8px; gap: 6px; }
+  .opponent .avatar { width: 24px; height: 24px; border-radius: 9px; font-size: 10px; }
+  .opponent .player-name { max-width: 58px; font-size: 10.5px; }
+  .opponent .player-count { font-size: 9px; }
+  .opponent .mini-back { display: none; }
   .arena::after { font-size: 16px; }
   .table-center { gap: 22px; }
   .draw-pile, .discard-slot { width: 60px; height: 90px; }

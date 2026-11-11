@@ -50,7 +50,7 @@ export function createServer() {
         res.writeHead(200, {
           "Cache-Control": "no-store",
           "Content-Length": content.length,
-          "Content-Security-Policy": "default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+          "Content-Security-Policy": "default-src 'self'; style-src 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
           "Content-Type": mimeTypes[extname(file)],
           "X-Content-Type-Options": "nosniff",
         });

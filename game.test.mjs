@@ -146,7 +146,7 @@ test("wild +10/+15/+20 can be played anytime, pick the next color, and answer st
   assert.equal(game.currentIndex, 2);
 });
 
-test("a player busts at 41 cards when they pay a stack, and the last player standing wins", () => {
+test("a player busts at 40 cards when they pay a stack, and the last player standing wins", () => {
   const victim = Array.from({ length: 39 }, (_, i) => ({ id: `bust-${i}`, color: "green", type: "number", value: i % 10 }));
   const game = fixture([
     { id: "hammer", color: "red", type: "draw10" },
@@ -233,6 +233,31 @@ test("bots pay the stack when they hold no escalation", () => {
   assert.equal(game.players[1].hand.length, 6);
   assert.equal(game.stackAmount, 0);
   assert.equal(game.currentIndex, 0);
+});
+
+test("a hand of exactly 40 cards is out; 39 survives", () => {
+  const makeGame = (size) => fixture([
+    { id: "open-two", color: "red", type: "draw2" },
+    { id: "a-spare", color: "blue", type: "number", value: 3 },
+  ], {
+    playerCount: 3,
+    bHand: Array.from({ length: size }, (_, i) => ({ id: `v-${i}`, color: "green", type: "number", value: i % 10 })),
+    drawPile: [
+      { id: "hit-0", color: "yellow", type: "number", value: 1 },
+      { id: "hit-1", color: "yellow", type: "number", value: 2 },
+    ],
+  });
+  const busted = makeGame(38);
+  applyMove(busted, "a", { type: "play", cardId: "open-two" });
+  applyMove(busted, "b", { type: "payStack" });
+  assert.equal(busted.players[1].eliminated, true);
+  assert.equal(busted.players[1].hand.length, 0);
+
+  const safe = makeGame(37);
+  applyMove(safe, "a", { type: "play", cardId: "open-two" });
+  applyMove(safe, "b", { type: "payStack" });
+  assert.notEqual(safe.players[1].eliminated, true);
+  assert.equal(safe.players[1].hand.length, 39);
 });
 
 test("turn order skips eliminated players", () => {
