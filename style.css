@@ -474,13 +474,10 @@ footer span { color: var(--gold); }
 /* Playable cards lift out of the hand at full colour, above their neighbours. */
 .hand-card.is-playable { transform: translateY(-10px); z-index: 2; }
 .hand-card.is-playable .card { box-shadow: 0 0 0 2.5px var(--gold), 0 12px 20px rgba(4, 3, 14, .52); }
-.hand-card:hover:not(:disabled), .hand-card:focus-visible { transform: translateY(-16px) rotate(-2deg); z-index: 3; }
 .hand-card:active:not(:disabled) { transform: translateY(-7px) scale(.98); }
 /* Waiting for your turn: the hand is clearly dimmed but the colours stay
    readable, so you can plan which pile to build toward. */
 .hand-cards.waiting .hand-card .card { filter: grayscale(.45) brightness(.68) saturate(.72); }
-/* Hovering the hand fans the cards out far enough that every centre number is fully readable. */
-.hand-cards:hover .hand-card + .hand-card { margin-left: calc(var(--step) * 4.5 - var(--w) - 8px); }
 .hand-card.just-drawn .card { animation: card-pop .55s var(--ease-spring); }
 .empty-hand { align-self: center; color: var(--faint); font-size: 12.5px; }
 
