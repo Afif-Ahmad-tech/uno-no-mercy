@@ -375,6 +375,7 @@ footer span { color: var(--gold); }
 .card.red { --card-color: #f0555c; }
 .card.red .card-center { color: #93222b; text-shadow: 0 2px 3px rgba(9, 5, 26, .18); }
 .card.yellow { --card-color: #f7b82c; color: #33260a; }
+.card.yellow .card-corner { color: #33260a; text-shadow: 1px 1.5px 1px rgba(255, 255, 255, .42); }
 .card.yellow .card-center { text-shadow: 1.5px 2px 1.5px rgba(120, 80, 8, .4); }
 .card.green { --card-color: #1fb377; }
 .card.green .card-center { color: #0d7a51; text-shadow: 0 2px 3px rgba(9, 5, 26, .18); }
@@ -388,6 +389,7 @@ footer span { color: var(--gold); }
 }
 .card .card-glyph { display: block; }
 .card-center .card-glyph { width: 27px; height: 27px; }
+.card-corner .card-glyph { width: 9px; height: 9px; }
 .card[data-card-type="draw15"], .card[data-card-type="draw20"] { border-color: #fbd7a4; }
 .card[data-card-type="draw15"], .card[data-card-type="draw20"] {
   box-shadow: 0 6px 13px rgba(4, 3, 14, .4), 0 0 18px rgba(255, 209, 92, .4);
@@ -399,9 +401,11 @@ footer span { color: var(--gold); }
   font-size: 22px;
 }
 
-.card-center { position: relative; z-index: 1; text-shadow: 1px 2px 1px rgba(0, 0, 0, .5); font-weight: 700; font-family: "Russo One", "Segoe UI", sans-serif; }
+.card-center, .card-corner { position: relative; z-index: 1; text-shadow: 1px 2px 1px rgba(0, 0, 0, .5); font-weight: 700; font-family: "Russo One", "Segoe UI", sans-serif; }
 .card-center { font-size: 36px; line-height: 1; letter-spacing: -.06em; }
 .card-center.word { font-size: 15px; letter-spacing: -.01em; }
+.card-corner { position: absolute; font-size: 10px; left: 6px; top: 5px; }
+.card-corner.bottom { left: auto; top: auto; right: 6px; bottom: 5px; transform: rotate(180deg); }
 
 .back-card {
   display: inline-grid; place-items: center;
@@ -477,6 +481,12 @@ footer span { color: var(--gold); }
 /* Hovering the hand slides the card that follows a playable one clear, so
    every playable number is readable. Unplayable cards keep their 85% stack. */
 .hand-cards:hover .hand-card.is-playable + .hand-card { margin-left: 0; }
+/* Corner numbers ride on every card, but in the tight stack neighbours would
+   collide with them. They show on the exposed top card and on the playable
+   cards that hover separates — never on a covered card. */
+.hand-cards .hand-card .card-corner { opacity: 0; transition: opacity var(--t-base); }
+.hand-cards .hand-card:last-child .card-corner,
+.hand-cards .hand-card.is-playable .card-corner { opacity: 1; }
 .hand-card.just-drawn .card { animation: card-pop .55s var(--ease-spring); }
 .empty-hand { align-self: center; color: var(--faint); font-size: 12.5px; }
 
@@ -665,6 +675,9 @@ footer span { color: var(--gold); }
   .card-center { font-size: 26px; }
   .card-center .card-glyph { width: 21px; height: 21px; }
   .card-center.word { font-size: 12.5px; }
+  .card-corner { font-size: 8px; left: 5px; top: 4px; }
+  .card-corner .card-glyph { width: 8px; height: 8px; }
+  .card-corner.bottom { left: auto; top: auto; right: 5px; bottom: 4px; }
   .color-ring { inset: -10px -12px; border-width: 2.5px; }
   .hand-card .card { width: 62px; }
   .hand-cards { --w: 62px; min-height: 112px; }
@@ -700,6 +713,9 @@ footer span { color: var(--gold); }
   .card-center { font-size: 22px; }
   .card-center .card-glyph { width: 18px; height: 18px; }
   .card-center.word { font-size: 11px; }
+  .card-corner { font-size: 7px; left: 4px; top: 3px; }
+  .card-corner .card-glyph { width: 7px; height: 7px; }
+  .card-corner.bottom { left: auto; top: auto; right: 4px; bottom: 3px; }
   .color-ring { inset: -8px -10px; border-width: 2px; }
   .pile-caption { font-size: 10px; }
   .turn-callout { min-height: 26px; font-size: 12px; gap: 8px; }
