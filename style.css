@@ -673,7 +673,6 @@ footer span { color: var(--gold); }
   .hand-card .card { width: 62px; }
   .hand-cards { --w: 62px; min-height: 112px; }
   .hand-card.is-playable { transform: translateY(-8px); }
-  .hand-card:hover:not(:disabled), .hand-card:focus-visible { transform: translateY(-13px) rotate(-2deg); }
   .mobile-gap { letter-spacing: .08em; }
   footer { font-size: 10px; letter-spacing: .12em; }
 }
@@ -723,6 +722,5 @@ footer span { color: var(--gold); }
   .hand-card { padding: 2px; width: calc(var(--w) + 4px); }
   .hand-card + .hand-card { margin-left: calc((var(--w) + 4px) * -.85); }
   .hand-card.is-playable { transform: translateY(-6px); }
-  .hand-card:hover:not(:disabled), .hand-card:focus-visible { transform: translateY(-10px) rotate(-2deg); }
   .waiting-card { padding: 18px 16px; }
 }
