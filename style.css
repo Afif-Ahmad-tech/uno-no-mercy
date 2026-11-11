@@ -478,8 +478,8 @@ footer span { color: var(--gold); }
 .hand-card:active:not(:disabled) { transform: translateY(-7px) scale(.98); }
 /* Waiting for your turn: the whole hand sits greyed until play comes back. */
 .hand-cards.waiting .hand-card .card { filter: grayscale(.8) brightness(.6) saturate(.55); }
-/* Hovering the hand fans the overlap out so every card is readable. */
-.hand-cards:hover .hand-card + .hand-card { margin-left: calc(var(--step) * 2.5 - var(--w) - 8px); }
+/* Hovering the hand fans the cards out far enough that every centre number is fully readable. */
+.hand-cards:hover .hand-card + .hand-card { margin-left: calc(var(--step) * 4.5 - var(--w) - 8px); }
 .hand-card.just-drawn .card { animation: card-pop .55s var(--ease-spring); }
 .empty-hand { align-self: center; color: var(--faint); font-size: 12.5px; }
 

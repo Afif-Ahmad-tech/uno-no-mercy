@@ -159,7 +159,7 @@ function cardMarkup(card) {
   const glyph = CARD_GLYPHS[card.type];
   const center = card.type === "wild" ? CARD_GLYPHS.wild : (glyph ?? escapeHtml(symbol));
   const corner = glyph ?? escapeHtml(symbol);
-  const word = !glyph && (symbol.length > 2 || card.type === "wild" || card.type === "wild10" || card.type === "wild15" || card.type === "wild20");
+  const word = !glyph && (symbol.length > 1 || card.type === "wild");
   return `<span class="card ${colorClass}" data-card-type="${escapeHtml(card.type)}" aria-hidden="true"><span class="card-corner">${corner}</span><span class="card-center${word ? " word" : ""}">${center}</span><span class="card-corner bottom">${corner}</span></span>`;
 }
 
